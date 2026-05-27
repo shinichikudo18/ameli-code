@@ -813,3 +813,59 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
     max-width: 100vw;
   }
 }
+
+#update-bar {
+  position: fixed;
+  bottom: 32px;
+  left: 0;
+  right: 0;
+  background: var(--bg3);
+  border-top: 1px solid var(--coral-glow);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  font-size: 13px;
+  gap: 12px;
+  box-shadow: 0 -4px 20px rgba(212, 81, 57, 0.15);
+}
+
+.update-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.update-progress-text {
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.update-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  z-index: 99;
+}
+
+.update-check-text {
+  color: var(--text-muted);
+  font-size: 11px;
+}

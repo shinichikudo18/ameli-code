@@ -591,3 +591,62 @@ function escapeHtml(str) {
   div.textContent = str
   return div.innerHTML
 }
+
+async function initUpdater() {
+  const versionEl = document.getElementById('version-text')
+  const updateCheckText = document.getElementById('update-check-text')
+  const updateBar = document.getElementById('update-bar')
+  const updateVersionText = document.getElementById('update-version-text')
+  const updateProgressText = document.getElementById('update-progress-text')
+  const btnDownload = document.getElementById('btn-update-download')
+  const btnInstall = document.getElementById('btn-update-install')
+  const btnSkip = document.getElementById('btn-update-skip')
+
+  const version = await window.electronAPI.getAppVersion()
+  versionEl.textContent = `v${version}`
+
+  updateCheckText.textContent = 'Buscando actualizaciones...'
+
+  window.electronAPI.onUpdateAvailable((info) => {
+    updateCheckText.textContent = ''
+    updateBar.classList.remove('hidden')
+    updateVersionText.textContent = `Nueva versión: v${info.version}`
+    btnDownload.classList.remove('hidden')
+    btnInstall.classList.add('hidden')
+    updateProgressText.textContent = ''
+  })
+
+  window.electronAPI.onUpdateNotAvailable(() => {
+    updateCheckText.textContent = 'Actualizado'
+  })
+
+  window.electronAPI.onUpdateDownloadProgress((progress) => {
+    btnDownload.classList.add('hidden')
+    const pct = Math.round(progress.percent)
+    updateProgressText.textContent = `Descargando... ${pct}%`
+  })
+
+  window.electronAPI.onUpdateDownloaded(() => {
+    updateProgressText.textContent = 'Descarga completa'
+    btnDownload.classList.add('hidden')
+    btnInstall.classList.remove('hidden')
+  })
+
+  btnDownload.addEventListener('click', () => {
+    btnDownload.disabled = true
+    btnDownload.textContent = 'Descargando...'
+    window.electronAPI.downloadUpdate()
+  })
+
+  btnInstall.addEventListener('click', () => {
+    window.electronAPI.installUpdate()
+  })
+
+  btnSkip.addEventListener('click', () => {
+    updateBar.classList.add('hidden')
+  })
+
+  window.electronAPI.checkForUpdates()
+}
+
+initUpdater()

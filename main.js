@@ -5,6 +5,7 @@ const http = require('http')
 const { spawn } = require('child_process')
 const fs = require('fs')
 const fsp = fs.promises
+const { autoUpdater } = require('electron-updater')
 
 let mainWindow
 let tray
@@ -235,6 +236,29 @@ function createWindow() {
   })
 }
 
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+
+autoUpdater.on('update-available', (info) => {
+  const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
+  send('update-available', { version: info.version, releaseDate: info.releaseDate })
+})
+
+autoUpdater.on('update-not-available', () => {
+  const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
+  send('update-not-available', true)
+})
+
+autoUpdater.on('download-progress', (progress) => {
+  const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
+  send('update-download-progress', { percent: progress.percent, bytesPerSecond: progress.bytesPerSecond })
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
+  send('update-downloaded', { version: info.version })
+})
+
 async function checkServer(port) {
   try {
     const res = await apiFetch(port, '/global/health')
@@ -293,6 +317,10 @@ app.whenReady().then(async () => {
       }
     })
   }
+
+  setTimeout(() => {
+    autoUpdater.checkForUpdates()
+  }, 5000)
 
   ipcMain.handle('get-providers', async () => {
     if (!activePort) return null
@@ -441,6 +469,30 @@ app.whenReady().then(async () => {
     else mainWindow.maximize()
   })
   ipcMain.handle('close-window', () => mainWindow.close())
+
+  ipcMain.handle('check-for-updates', async () => {
+    try {
+      autoUpdater.checkForUpdates()
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('download-update', async () => {
+    try {
+      autoUpdater.downloadUpdate()
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
+  })
+
+  ipcMain.handle('install-update', () => {
+    autoUpdater.quitAndInstall()
+  })
+
+  ipcMain.handle('get-app-version', () => app.getVersion())
 })
 
 app.on('before-quit', () => { isQuitting = true })
