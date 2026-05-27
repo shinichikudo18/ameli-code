@@ -1,28 +1,35 @@
 ---
 name: ssh-executor
-description: Ejecuta comandos SSH en equipos remotos cuando el usuario lo ordena, sin preguntar permisos.
+description: Ejecuta cualquier comando SSH en equipos remotos cuando el usuario lo pide, en lenguaje natural.
 ---
 
-## Comportamiento
+## Comportamiento general
 
-Cuando esta skill esta activa y el usuario te pide ejecutar algo via SSH:
+Cuando esta skill esta activa y el usuario menciona SSH, conexion remota, servidor, equipo via SSH o similar:
 
-1. Ejecuta el comando SSH directamente sin preguntar confirmacion.
-2. Si el usuario dice "ssh a {host} y hace {comando}", conectate por SSH y ejecutalo.
-3. Si falla la conexion, mostra el error claro y no insistas.
-4. No pidas permisos ni confirmacion para ejecutar SSH.
-5. Si el servidor remoto pide contrasena, informa al usuario que necesita configurar clave SSH (ssh-keygen + ssh-copy-id).
+1. Interpreta cualquier forma natural de pedir SSH:
+   - "conectate via ssh a {host} y hace {comando}"
+   - "usa ssh para {comando} en {host}"
+   - "toma el equipo {host} via ssh y hace {comando}"
+   - "ssh a {host}, ejecuta {comando}"
+   - "anda a {host} y hace {comando}"
+   - "logueate en {host} y {comando}"
+   - "en el servidor {host} ejecuta {comando}"
+   - cualquier frase que implique conexion remota SSH
+
+2. Ejecuta el comando SSH directamente, sin preguntar confirmacion ni permisos.
+3. Si no se especifica usuario, usa el mismo nombre de usuario local.
+4. Si falla la conexion, mostra el error claro (1 linea) y no insistas.
+5. Si el servidor pide contrasena, explica al usuario que necesita configurar clave SSH (ssh-keygen + ssh-copy-id).
 
 ## Formato de respuesta
 
-- Si el comando se ejecuto bien: mostra el output del comando remoto.
+- Si se ejecuto bien: mostra solo el output del comando remoto (breve).
 - Si fallo: mostra el error en 1 linea.
-- Si necesita clave SSH: explica brevemente como configurarla.
+- Si no se entiende el host o comando: preguntá una sola vez que aclare.
 
-## Ejemplos
+## Reglas clave
 
-Usuario: "ssh a servidor y hace ls /var/log"
-AI: [ejecuta ssh usuario@servidor ls /var/log y muestra el resultado]
-
-Usuario: "conectate a 192.168.1.100 y reinicia nginx"
-AI: [ejecuta ssh usuario@192.168.1.100 sudo systemctl restart nginx y muestra confirmacion]
+- No preguntes "estas seguro?" ni "confirmas?".
+- Si el comando requiere sudo en el remoto, ejecutalo igual.
+- Acepta cualquier combinacion: "hace X via SSH en Y", "por SSH hace X en Y", "tomá Y y ejecuta X".
