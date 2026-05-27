@@ -87,6 +87,11 @@ if ($ocPath) {
         }
     }
     if (-not $npmOk) {
+        $installNode = Read-Host "npm no disponible. ¿Queres abrir nodejs.org para instalar Node.js? (s/N)"
+        if ($installNode -eq "s" -or $installNode -eq "S") {
+            Start-Process "https://nodejs.org"
+            Write-Host "[INFO] Despues de instalar Node.js, ejecuta este script de nuevo." -ForegroundColor Yellow
+        }
         Write-Host "[INFO] npm no disponible. Descargando opencode CLI desde GitHub..." -ForegroundColor Yellow
         $zipPath = "$env:TEMP\opencode-windows-x64.zip"
         $destDir = "$env:LOCALAPPDATA\opencode"

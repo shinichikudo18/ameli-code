@@ -15,10 +15,16 @@
     ExecWait '"$WINDIR\System32\cmd.exe" /c "npm install -g opencode-ai"' $1
     ${If} $1 != 0
       DetailPrint "npm no disponible."
-      MessageBox MB_YESNO "AMELI Code necesita opencode CLI para funcionar.$\n$\n¿Querés que se abra la página de descarga?" IDYES download IDNO skip
-      download:
+      MessageBox MB_YESNO "¿Querés descargar Node.js (incluye npm) para que AMELI Code pueda instalar opencode automáticamente?" IDYES installNode IDNO askOpencode
+      installNode:
+        ExecShell "open" "https://nodejs.org"
+        DetailPrint "Después de instalar Node.js, ejecutá: npm install -g opencode-ai"
+        Goto askOpencode
+      askOpencode:
+        MessageBox MB_YESNO "¿Querés ir a opencode.ai para descargar opencode CLI?" IDYES openOC IDNO done
+      openOC:
         ExecShell "open" "https://opencode.ai"
-      skip:
+      done:
     ${Else}
       DetailPrint "opencode CLI instalado via npm"
     ${EndIf}
