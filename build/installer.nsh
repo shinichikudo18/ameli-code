@@ -80,14 +80,17 @@
     FileWrite $9 "$\r$\n[3/5] Instalando opencode via npm...$\r$\n"
     DetailPrint "[3/5] Instalando opencode via npm..."
     FileWrite $9 "  Ejecutando: $2 install -g opencode-ai$\r$\n"
-    nsExec::ExecToLog '"cmd.exe" /c "$2 install -g opencode-ai"'
+    nsExec::ExecToStack '"cmd.exe" /c "$2 install -g opencode-ai"'
     Pop $1
+    Pop $5
+    DetailPrint "$5"
     ${If} $1 == 0
       StrCpy $0 0
       DetailPrint "opencode CLI instalado via npm"
       FileWrite $9 "  [OK] npm install -g opencode-ai exitoso$\r$\n"
     ${Else}
-      FileWrite $9 "  [ERROR] npm fall con cdigo $1$\r$\n"
+      FileWrite $9 "  [ERROR] npm fall con codigo $1$\r$\n"
+      FileWrite $9 "  [npm output]:$\r$\n$5$\r$\n"
     ${EndIf}
   ${Else}
     FileWrite $9 "  [INFO] npm no encontrado. Instalando Node.js via winget...$\r$\n"
@@ -97,13 +100,16 @@
     ${If} $1 == 0
       FileWrite $9 "  [OK] winget install OpenJS.NodeJS.LTS exitoso$\r$\n"
       FileWrite $9 "  [INFO] Ejecutando: npm install -g opencode-ai$\r$\n"
-      nsExec::ExecToLog '"cmd.exe" /c "npm install -g opencode-ai"'
+      nsExec::ExecToStack '"cmd.exe" /c "npm install -g opencode-ai"'
       Pop $1
+      Pop $5
+      DetailPrint "$5"
       ${If} $1 == 0
         StrCpy $0 0
         FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
       ${Else}
-        FileWrite $9 "  [ERROR] npm install -g opencode-ai fall con cdigo $1$\r$\n"
+        FileWrite $9 "  [ERROR] npm install -g opencode-ai fall con codigo $1$\r$\n"
+        FileWrite $9 "  [npm output]:$\r$\n$5$\r$\n"
       ${EndIf}
     ${Else}
       FileWrite $9 "  [ERROR] winget fall con cdigo $1 (puede no estar disponible)$\r$\n"
