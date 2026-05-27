@@ -456,7 +456,8 @@ async function sendPrompt() {
     const rawReasoning = (result.parts || []).filter(p => p.type === 'reasoning').map(p => p.text).join('\n\n')
     const assistantText = extractText(result.parts)
 
-    const reasoning = rawReasoning ? rawReasoning.split(/[.\n]/).filter(Boolean)[0] + '.' : ''
+    let reasoning = ''
+    if (rawReasoning) reasoning = summarizeReasoning(rawReasoning)
 
     if (reasoning || mode) {
       const div = document.createElement('div')
@@ -529,6 +530,28 @@ document.addEventListener('keydown', (e) => {
 function extractText(parts) {
   if (!parts) return ''
   return parts.filter(p => p.type === 'text').map(p => p.text).join('\n')
+}
+
+const ACTION_PATTERNS = [
+  { re: /(?:run|execut)(?:ed|ing)?\s+(.+?(?:command|script|ssh|ls|cat|grep|find|npm|git|curl|wget))/i, icon: '▶️', label: 'ejecutando' },
+  { re: /(?:read|check|view|look)(?:ed|ing)?\s+(?:the\s+)?(?:contents?\s+of\s+)?(.+?(?:file|config|log|json|md|txt))/i, icon: '🔍', label: 'leyendo' },
+  { re: /(?:edit|modif|chang|updat|fix)(?:ed|ing)?\s+(.+?(?:file|config|code|script|line))/i, icon: '✏️', label: 'editando' },
+  { re: /(?:list|explor|scan|search|find)(?:ed|ing)?\s+(.+?(?:dir|folder|path|project|repo|archivo))/i, icon: '📂', label: 'explorando' },
+  { re: /(?:creat|add|writ)(?:ed|ing)?\s+(.+?(?:file|function|class|component|archivo|skill))/i, icon: '➕', label: 'creando' },
+  { re: /(?:install|build|compil|deploy)(?:ed|ing)?\s+(.+?(?:dep|package|module|app|project))/i, icon: '🔧', label: 'compilando' },
+  { re: /(?:connec|ssh|remote|server)(?:ed|ing)?\s+(?:to\s+)?(.+?(?:host|server|ip|machine|equipo))/i, icon: '🌐', label: 'conectando' },
+  { re: /(.+?(?:run|execut|hace|corre|ejecuta)).+(?:command|comando|script)/i, icon: '▶️', label: 'ejecutando' },
+]
+
+function summarizeReasoning(text) {
+  const first = text.split(/[.\n]/).filter(Boolean)[0] || text
+  for (const p of ACTION_PATTERNS) {
+    const m = first.match(p.re)
+    if (m) return `${p.icon} ${p.label}${m[1] ? ' ' + m[1].trim().split(/[\s,]+/).slice(0,3).join(' ') : ''}`
+  }
+  const clean = first.replace(/^(The user asked|The user is|I should|The user wants|I need|I can|I will|Let me|The prompt|The user said)\s+/i, '').trim()
+  const short = clean.replace(/\s+/g, ' ').slice(0, 100)
+  return short ? short.charAt(0).toUpperCase() + short.slice(1) : ''
 }
 
 async function loadSkillsModal() {
