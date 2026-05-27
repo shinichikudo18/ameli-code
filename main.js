@@ -2,6 +2,7 @@ const os = require('os')
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } = require('electron')
 const path = require('path')
 const http = require('http')
+const https = require('https')
 const { spawn } = require('child_process')
 const fs = require('fs')
 const fsp = fs.promises
@@ -286,7 +287,11 @@ autoUpdater.on('error', (err) => {
 function checkUpdateFallback() {
   const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
   const currentVersion = app.getVersion()
-  const req = http.get('http://raw.githubusercontent.com/shinichikudo18/ameli-code/main/version.json', (res) => {
+  const req = https.get('https://raw.githubusercontent.com/shinichikudo18/ameli-code/main/version.json', (res) => {
+    if (res.statusCode !== 200) {
+      send('update-not-available', true)
+      return
+    }
     let data = ''
     res.on('data', (chunk) => data += chunk)
     res.on('end', () => {
@@ -302,7 +307,9 @@ function checkUpdateFallback() {
       }
     })
   })
-  req.on('error', () => {})
+  req.on('error', () => {
+    send('update-not-available', true)
+  })
   req.setTimeout(8000, () => { req.destroy() })
 }
 
