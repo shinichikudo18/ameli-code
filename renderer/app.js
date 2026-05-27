@@ -30,7 +30,19 @@ const permissionsList = document.getElementById('permissions-list')
 const permissionsModal = document.getElementById('permissions-modal')
 const permissionsListModal = document.getElementById('permissions-list-modal')
 const btnPermissions = document.getElementById('btn-permissions')
+const permSetupModal = document.getElementById('perm-setup-modal')
+const permSetupList = document.getElementById('perm-setup-list')
 let sessionPermissions = []
+
+const PERM_DESCRIPTIONS = {
+  shell: 'Ejecutar comandos en el sistema (SSH, scripts, programas)',
+  read: 'Leer archivos y directorios del sistema',
+  write: 'Crear y modificar archivos',
+  edit: 'Editar archivos existentes',
+  run: 'Ejecutar herramientas y procesos',
+  todowrite: 'Escribir en la lista de tareas',
+  task: 'Crear subtareas y dividir trabajo',
+}
 let defaultModel = ''
 let skillsData = []
 let activeSkills = JSON.parse(localStorage.getItem('ameli.activeSkills') || '[]')
@@ -137,7 +149,10 @@ $('btn-create-session').onclick = async () => {
     sessionTitleInput.value = ''
     await loadSessions()
     const nextId = session.id || sessions.find(s => s.title === title)?.id || sessions[0]?.id
-    if (nextId) await selectSession(nextId)
+    if (nextId) {
+      await selectSession(nextId)
+      showPermSetup()
+    }
   }
 }
 
@@ -589,6 +604,52 @@ function renderPermissionsBar() {
   const parts = sessionPermissions.map(p => `${p.permission}=${p.action}`)
   permissionsList.textContent = parts.join(', ')
 }
+
+function showPermSetup() {
+  if (sessionPermissions.length > 0) return
+  permSetupList.innerHTML = ''
+  const types = Object.keys(PERM_DESCRIPTIONS)
+  const selected = {}
+  for (const t of types) selected[t] = 'ask'
+
+  for (const t of types) {
+    const div = document.createElement('div')
+    div.className = 'perm-entry'
+    div.innerHTML = `
+      <div>
+        <div class="perm-name">${t}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${PERM_DESCRIPTIONS[t]}</div>
+      </div>
+      <div class="perm-actions">
+        <button class="perm-btn ${selected[t] === 'allow' ? 'active' : ''}" data-action="allow">Allow</button>
+        <button class="perm-btn ${selected[t] === 'ask' ? 'active' : ''}" data-action="ask">Ask</button>
+        <button class="perm-btn ${selected[t] === 'deny' ? 'active' : ''}" data-action="deny">Deny</button>
+      </div>`
+    permSetupList.appendChild(div)
+    div.querySelectorAll('.perm-btn').forEach(btn => {
+      btn.onclick = () => {
+        selected[t] = btn.dataset.action
+        div.querySelectorAll('.perm-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+      }
+    })
+  }
+  permSetupModal.classList.remove('hidden')
+}
+
+$('btn-perm-setup-apply').onclick = async () => {
+  const types = Object.keys(PERM_DESCRIPTIONS)
+  for (const t of types) {
+    const entry = permSetupList.querySelector(`.perm-entry:nth-child(${types.indexOf(t) + 1})`)
+    const active = entry?.querySelector('.perm-btn.active')
+    if (active) {
+      await window.electronAPI.setSessionPermission({ sessionId: currentSessionId, permission: t, action: active.dataset.action, pattern: '*' })
+    }
+  }
+  permSetupModal.classList.add('hidden')
+  await loadSessionPermissions()
+}
+$('btn-perm-setup-skip').onclick = () => permSetupModal.classList.add('hidden')
 
 async function openPermissionsModal() {
   await loadSessionPermissions()

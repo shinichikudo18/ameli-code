@@ -148,6 +148,20 @@
   </div>
 </div>
 
+<div id="perm-setup-modal" class="modal hidden">
+  <div class="modal-content" style="max-width: 460px;">
+    <div class="modal-header">
+      <h3>Configurar permisos de la sesion</h3>
+    </div>
+    <div style="padding:4px 14px 0;font-size:11px;color:var(--text-dim);">Elegí qué acciones puede hacer opencode en esta sesion:</div>
+    <div id="perm-setup-list"></div>
+    <div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border);justify-content:flex-end;">
+      <button id="btn-perm-setup-apply" class="btn-primary btn-sm">Aplicar</button>
+      <button id="btn-perm-setup-skip" class="btn-secondary btn-sm">Saltar</button>
+    </div>
+  </div>
+</div>
+
 <div id="update-bar" class="update-bar hidden">
   <div class="update-info">
     <span id="update-version-text"></span>

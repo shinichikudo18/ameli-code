@@ -1027,3 +1027,11 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
   align-items: center;
   border-top: 1px solid var(--border);
 }
+
+#perm-setup-modal .perm-entry {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+#perm-setup-modal .perm-entry:last-child {
+  border-bottom: none;
+}
