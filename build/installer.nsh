@@ -89,7 +89,43 @@
       FileWrite $9 "  [ERROR] npm falló con código $1$\r$\n"
     ${EndIf}
   ${Else}
-    FileWrite $9 "  [ERROR] npm no encontrado en ninguna ubicación$\r$\n"
+    FileWrite $9 "  [INFO] npm no encontrado directamente. Verificando si Node.js esta instalado...$\r$\n"
+    StrCpy $3 ""
+    ExecWait '"$WINDIR\System32\cmd.exe" /c "where node >nul 2>nul"' $1
+    ${If} $1 == 0
+      StrCpy $3 "node"
+      FileWrite $9 "  [OK] node.exe encontrado en PATH$\r$\n"
+    ${Else}
+      IfFileExists "$PROGRAMFILES64\nodejs\node.exe" 0 +3
+      StrCpy $3 "$PROGRAMFILES64\nodejs\node.exe"
+      FileWrite $9 "  [OK] node.exe encontrado en %PROGRAMFILES64%\nodejs\$\r$\n"
+      ${If} $3 == ""
+        IfFileExists "$PROGRAMFILES\nodejs\node.exe" 0 +3
+        StrCpy $3 "$PROGRAMFILES\nodejs\node.exe"
+        FileWrite $9 "  [OK] node.exe encontrado en %PROGRAMFILES%\nodejs\$\r$\n"
+      ${EndIf}
+    ${EndIf}
+
+    ${If} $3 != ""
+      FileWrite $9 "  [INFO] Node.js detectado. Instalando npm via PowerShell...$\r$\n"
+      DetailPrint "Node.js detectado. Instalando npm..."
+      ExecWait "$\"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe$\" -Command $\"npm install npm@latest -g$\"" $1
+      ${If} $1 == 0
+        FileWrite $9 "  [OK] npm install npm@latest -g exitoso (codigo $1)$\r$\n"
+        FileWrite $9 "  [INFO] Reintentando npm install -g opencode-ai...$\r$\n"
+        ExecWait '"$WINDIR\System32\cmd.exe" /c "npm install -g opencode-ai"' $1
+        ${If} $1 == 0
+          StrCpy $0 0
+          FileWrite $9 "  [OK] opencode instalado via npm (despues de instalar npm)$\r$\n"
+        ${Else}
+          FileWrite $9 "  [ERROR] npm install -g opencode-ai aun falla (codigo $1)$\r$\n"
+        ${EndIf}
+      ${Else}
+        FileWrite $9 "  [ERROR] npm install npm@latest -g fallo (codigo $1)$\r$\n"
+      ${EndIf}
+    ${Else}
+      FileWrite $9 "  [INFO] Node.js no encontrado. No se puede instalar npm.$\r$\n"
+    ${EndIf}
   ${EndIf}
 
   ${If} $0 != 0
