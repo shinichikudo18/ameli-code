@@ -26,10 +26,29 @@ Este repo incluye skills y contexto para AMELI:
 - `backups/opencode/skills/`
 - `context.md`
 
+## Instalacion
+
+### Linux
+```bash
+./install.sh
+```
+
+### Windows
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+## Build para Windows (.exe)
+
+```bash
+npm run build:win
+```
+
+Esto genera un instalador .exe en `dist/` usando electron-builder (NSIS).
+
 ## Uso
 
 ```bash
-npm install
 npm start
 ```
 
