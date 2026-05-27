@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getProjects: () => ipcRenderer.invoke('get-projects'),
   getCurrentProject: () => ipcRenderer.invoke('get-current-project'),
   listSkills: () => ipcRenderer.invoke('list-skills'),
+  syncSkills: () => ipcRenderer.invoke('sync-skills'),
   pickDirectory: () => ipcRenderer.invoke('pick-directory'),
   startServerInDir: (opts) => ipcRenderer.invoke('start-server-in-dir', opts),
   renameProject: (opts) => ipcRenderer.invoke('rename-project', opts),

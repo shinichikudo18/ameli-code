@@ -32,9 +32,17 @@ git push && git push origin "v$VERSION"
 echo "Buildeando .exe para Windows..."
 npm run build:win
 
+echo "Renombrando installer para electron-updater..."
+SANITIZED_EXE="AMELI-Code-Setup-${VERSION}.exe"
+BLOCKMAP="${SANITIZED_EXE}.blockmap"
+cp "dist/AMELI Code Setup ${VERSION}.exe" "dist/${SANITIZED_EXE}"
+cp "dist/AMELI Code Setup ${VERSION}.exe.blockmap" "dist/${BLOCKMAP}"
+
 echo "Creando release en GitHub..."
 gh release create "v$VERSION" \
-  "dist/AMELI Code Setup $VERSION.exe" \
+  "dist/${SANITIZED_EXE}" \
+  "dist/${BLOCKMAP}" \
+  "dist/latest.yml" \
   --title "AMELI Code v$VERSION" \
   --notes "Release v$VERSION"
 

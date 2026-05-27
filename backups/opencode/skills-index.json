@@ -1,0 +1,26 @@
+[
+  {
+    "name": "ameli-personal",
+    "description": "Hace que el asistente se comporte como AMELI: perfil de ingenieria, trato cortes pero de colegas, como un companero de oficina con quien trabajar en equipo.",
+    "repo": "shinichikudo18/ameli-code",
+    "path": "backups/opencode/skills/ameli-personal"
+  },
+  {
+    "name": "context-sesion",
+    "description": "Gestiona un archivo context.md en el proyecto para mantener informacion entre sesiones. Al conectar a un servidor remoto o iniciar sesion, lo usa como referencia para retomar el trabajo sin repetir contexto, ahorrando tokens.",
+    "repo": "shinichikudo18/ameli-code",
+    "path": "backups/opencode/skills/context-sesion"
+  },
+  {
+    "name": "creacion-de-contexto",
+    "description": "Guardar el contexto de la sesion en un archivo context.md y pedir que sesion anterior reutilizar.",
+    "repo": "shinichikudo18/ameli-code",
+    "path": "backups/opencode/skills/creacion-de-contexto"
+  },
+  {
+    "name": "personalidad-de-respuesta-escritura",
+    "description": "Dar una personalidad amigable y cercana al texto cuando responde, pregunta o entrega resultados.",
+    "repo": "shinichikudo18/ameli-code",
+    "path": "backups/opencode/skills/personalidad-de-respuesta-escritura"
+  }
+]

@@ -29,8 +29,19 @@ git push origin "v$Version"
 Write-Host "Buildeando .exe para Windows..." -ForegroundColor Yellow
 npm run build:win
 
+Write-Host "Renombrando installer para electron-updater..." -ForegroundColor Yellow
+$SanitizedExe = "AMELI-Code-Setup-$Version.exe"
+$BlockMap = "$SanitizedExe.blockmap"
+Copy-Item "dist/AMELI Code Setup $Version.exe" "dist/$SanitizedExe"
+Copy-Item "dist/AMELI Code Setup $Version.exe.blockmap" "dist/$BlockMap" -ErrorAction SilentlyContinue
+
 Write-Host "Creando release en GitHub..." -ForegroundColor Yellow
-gh release create "v$Version" "dist/AMELI Code Setup $Version.exe" --title "AMELI Code v$Version" --notes "Release v$Version"
+gh release create "v$Version" `
+  "dist/$SanitizedExe" `
+  "dist/$BlockMap" `
+  "dist/latest.yml" `
+  --title "AMELI Code v$Version" `
+  --notes "Release v$Version"
 
 Write-Host ""
 Write-Host "✅ Release v$Version creada y publicada:" -ForegroundColor Green

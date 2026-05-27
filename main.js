@@ -277,6 +277,11 @@ autoUpdater.on('download-progress', (progress) => {
 autoUpdater.on('update-downloaded', (info) => {
   const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
   send('update-downloaded', { version: info.version })
+  setTimeout(() => {
+    setImmediate(() => {
+      autoUpdater.quitAndInstall()
+    })
+  }, 2000)
 })
 
 autoUpdater.on('error', (err) => {
@@ -448,6 +453,50 @@ app.whenReady().then(async () => {
     try { return await listSkills(activePort) } catch { return [] }
   })
 
+  ipcMain.handle('sync-skills', async () => {
+    const home = os.homedir()
+    const targetDir = path.join(home, '.config', 'opencode', 'skills')
+    const results = []
+    try {
+      const index = await new Promise((resolve, reject) => {
+        const r = https.get('https://raw.githubusercontent.com/shinichikudo18/ameli-code/main/backups/opencode/skills-index.json', (res) => {
+          if (res.statusCode !== 200) { reject(new Error('HTTP ' + res.statusCode)); return }
+          let d = ''
+          res.on('data', (c) => d += c)
+          res.on('end', () => { try { resolve(JSON.parse(d)) } catch (e) { reject(e) } })
+        })
+        r.on('error', reject)
+        r.setTimeout(10000, () => { r.destroy(); reject(new Error('timeout')) })
+      })
+      for (const skill of index) {
+        const skillDir = path.join(targetDir, skill.name)
+        const skillFile = path.join(skillDir, 'SKILL.md')
+        if (fs.existsSync(skillFile)) {
+          results.push({ name: skill.name, status: 'already-exists' })
+          continue
+        }
+        const url = `https://raw.githubusercontent.com/${skill.repo}/main/${skill.path}/SKILL.md`
+        const content = await new Promise((resolve, reject) => {
+          const r = https.get(url, (res) => {
+            if (res.statusCode !== 200) { reject(new Error('HTTP ' + res.statusCode)); return }
+            let d = ''
+            res.on('data', (c) => d += c)
+            res.on('end', () => resolve(d))
+          })
+          r.on('error', reject)
+          r.setTimeout(10000, () => { r.destroy(); reject(new Error('timeout')) })
+        })
+        if (!content) { results.push({ name: skill.name, status: 'error', error: 'empty response' }); continue }
+        fs.mkdirSync(skillDir, { recursive: true })
+        fs.writeFileSync(skillFile, content, 'utf8')
+        results.push({ name: skill.name, status: 'downloaded' })
+      }
+    } catch (e) {
+      return { ok: false, error: e.message, results }
+    }
+    return { ok: true, results }
+  })
+
   ipcMain.handle('get-sessions', async () => {
     if (!activePort) return []
     try { return await apiFetch(activePort, '/session') }
@@ -585,8 +634,41 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.handle('download-update', async () => {
+    const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
     try {
       autoUpdater.downloadUpdate()
+      return { ok: true }
+    } catch {
+    }
+    try {
+      const latest = await new Promise((resolve, reject) => {
+        const r = https.get('https://raw.githubusercontent.com/shinichikudo18/ameli-code/main/version.json', (res) => {
+          if (res.statusCode !== 200) { reject(new Error('HTTP ' + res.statusCode)); return }
+          let d = ''
+          res.on('data', (c) => d += c)
+          res.on('end', () => { try { resolve(JSON.parse(d)) } catch (e) { reject(e) } })
+        })
+        r.on('error', reject)
+        r.setTimeout(8000, () => { r.destroy(); reject(new Error('timeout')) })
+      })
+      if (!latest || !latest.downloadUrl) throw new Error('No download URL')
+      const tmpPath = path.join(app.getPath('temp'), `AMELI.Code.Setup.${latest.latest}.exe`)
+      const file = fs.createWriteStream(tmpPath)
+      await new Promise((resolve, reject) => {
+        const r = https.get(latest.downloadUrl, (res) => {
+          if (res.statusCode !== 200) { reject(new Error('HTTP ' + res.statusCode)); return }
+          const total = parseInt(res.headers['content-length'] || '0', 10)
+          let downloaded = 0
+          res.on('data', (chunk) => {
+            downloaded += chunk.length
+            if (total) send('update-download-progress', { percent: (downloaded / total) * 100, bytesPerSecond: 0 })
+          })
+          res.pipe(file)
+          file.on('finish', () => { file.close(); resolve() })
+        })
+        r.on('error', reject)
+      })
+      send('update-downloaded', { version: latest.latest })
       return { ok: true }
     } catch (e) {
       return { ok: false, error: e.message }

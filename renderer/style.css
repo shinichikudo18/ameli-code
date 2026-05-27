@@ -669,6 +669,30 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
   color: var(--text);
 }
 
+.skills-sync-status {
+  padding: 8px 14px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  margin: 4px 14px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.skills-sync-status.success {
+  border-color: rgba(0, 229, 160, 0.3);
+  color: var(--accent);
+}
+.skills-sync-status.error {
+  border-color: rgba(255, 89, 89, 0.3);
+  color: #ff5959;
+}
+
+.modal-header-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

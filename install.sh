@@ -59,16 +59,17 @@ echo -e "${GREEN}✅ Te llamaré $USER_NAME${NC}"
 echo ""
 echo -e "${YELLOW}Instalando skills de AMELI...${NC}"
 SKILLS_TARGET="$HOME/.config/opencode/skills"
-mkdir -p "$SKILLS_TARGET/ameli-personal"
-if [ -f "$APP_DIR/backups/opencode/skills/ameli-personal/SKILL.md" ]; then
-  sed "s/__USER_NAME__/$USER_NAME/g" "$APP_DIR/backups/opencode/skills/ameli-personal/SKILL.md" > "$SKILLS_TARGET/ameli-personal/SKILL.md"
-  echo -e "${GREEN}✅ Skill ameli-personal instalada${NC}"
-fi
-if [ -f "$APP_DIR/backups/opencode/skills/context-sesion/SKILL.md" ]; then
-  mkdir -p "$SKILLS_TARGET/context-sesion"
-  cp "$APP_DIR/backups/opencode/skills/context-sesion/SKILL.md" "$SKILLS_TARGET/context-sesion/SKILL.md"
-  echo -e "${GREEN}✅ Skill context-sesion instalada${NC}"
-fi
+for skill_dir in "$APP_DIR/backups/opencode/skills/"*/; do
+  skill_name=$(basename "$skill_dir")
+  [ -f "$skill_dir/SKILL.md" ] || continue
+  mkdir -p "$SKILLS_TARGET/$skill_name"
+  if [ "$skill_name" = "ameli-personal" ]; then
+    sed "s/__USER_NAME__/$USER_NAME/g" "$skill_dir/SKILL.md" > "$SKILLS_TARGET/$skill_name/SKILL.md"
+  else
+    cp "$skill_dir/SKILL.md" "$SKILLS_TARGET/$skill_name/SKILL.md"
+  fi
+  echo -e "${GREEN}✅ Skill $skill_name instalada${NC}"
+done
 AGENTS_TARGET="$HOME/.config/opencode"
 if [ -f "$APP_DIR/backups/opencode/AGENTS.md" ]; then
   sed "s/__USER_NAME__/$USER_NAME/g" "$APP_DIR/backups/opencode/AGENTS.md" > "$AGENTS_TARGET/AGENTS.md"

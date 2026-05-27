@@ -23,6 +23,8 @@ const btnRefreshModels = document.getElementById('btn-refresh-models')
 const btnRefreshSkills = document.getElementById('btn-refresh-skills')
 const selectedModelBadge = document.getElementById('selected-model-badge')
 const skillsActiveCount = document.getElementById('skills-active-count')
+const btnSyncSkills = document.getElementById('btn-sync-skills')
+const skillsSyncStatus = document.getElementById('skills-sync-status')
 let defaultModel = ''
 let skillsData = []
 let activeSkills = JSON.parse(localStorage.getItem('ameli.activeSkills') || '[]')
@@ -139,13 +141,17 @@ promptInput.onkeydown = (e) => {
 }
 
 $('btn-load-skills').onclick = loadSkillsModal
-$('btn-close-skills').onclick = () => skillsModal.classList.add('hidden')
+$('btn-close-skills').onclick = () => {
+  skillsModal.classList.add('hidden')
+  skillsSyncStatus.classList.add('hidden')
+}
 btnRefreshModels.onclick = async () => {
   await loadProviders()
 }
 btnRefreshSkills.onclick = async () => {
   await loadSkillsModal(true)
 }
+btnSyncSkills.onclick = syncSkills
 
 modelSelect.onchange = () => {
   persistSessionModel()
@@ -513,6 +519,31 @@ async function loadSkillsModal() {
     }
   } catch {
     skillsList.innerHTML = '<p style="color:var(--text-dim)">No se pudieron cargar los skills</p>'
+  }
+}
+
+async function syncSkills() {
+  btnSyncSkills.disabled = true
+  skillsSyncStatus.classList.remove('hidden')
+  skillsSyncStatus.className = 'skills-sync-status'
+  skillsSyncStatus.textContent = 'Sincronizando skills...'
+  try {
+    const result = await window.electronAPI.syncSkills()
+    if (!result.ok) {
+      skillsSyncStatus.textContent = 'Error: ' + (result.error || 'desconocido')
+      skillsSyncStatus.className = 'skills-sync-status error'
+      return
+    }
+    const dl = result.results.filter(r => r.status === 'downloaded').length
+    const existing = result.results.filter(r => r.status === 'already-exists').length
+    skillsSyncStatus.textContent = `${dl} descargados, ${existing} ya existentes`
+    skillsSyncStatus.className = 'skills-sync-status success'
+    await loadSkillsModal()
+  } catch (e) {
+    skillsSyncStatus.textContent = 'Error de conexion'
+    skillsSyncStatus.className = 'skills-sync-status error'
+  } finally {
+    btnSyncSkills.disabled = false
   }
 }
 

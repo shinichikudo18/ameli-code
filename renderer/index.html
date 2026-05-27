@@ -123,8 +123,12 @@
         <h3>Skills disponibles</h3>
         <span id="skills-active-count" class="badge">0 activas</span>
       </div>
-      <button id="btn-close-skills" class="btn-secondary btn-sm">✕</button>
+      <div class="modal-header-actions">
+        <button id="btn-sync-skills" class="btn-secondary btn-sm" title="Descargar skills del repositorio">↻ Sync</button>
+        <button id="btn-close-skills" class="btn-secondary btn-sm">✕</button>
+      </div>
     </div>
+    <div id="skills-sync-status" class="skills-sync-status hidden"></div>
     <div id="skills-list"></div>
   </div>
 </div>

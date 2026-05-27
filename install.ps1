@@ -51,17 +51,23 @@ Write-Host "[OK] Config guardada. Te llamare $userName" -ForegroundColor Green
 Write-Host ""
 Write-Host "Instalando skills de AMELI..." -ForegroundColor Yellow
 $skillsTarget = "$env:USERPROFILE\.config\opencode\skills"
-New-Item -ItemType Directory -Path "$skillsTarget\ameli-personal" -Force | Out-Null
-if (Test-Path "backups\opencode\skills\ameli-personal\SKILL.md") {
-    $content = Get-Content "backups\opencode\skills\ameli-personal\SKILL.md" -Raw
-    $content = $content.Replace("__USER_NAME__", $userName)
-    Set-Content -Path "$skillsTarget\ameli-personal\SKILL.md" -Value $content
-    Write-Host "[OK] Skill ameli-personal instalada" -ForegroundColor Green
-}
-if (Test-Path "backups\opencode\skills\context-sesion\SKILL.md") {
-    New-Item -ItemType Directory -Path "$skillsTarget\context-sesion" -Force | Out-Null
-    Copy-Item "backups\opencode\skills\context-sesion\SKILL.md" "$skillsTarget\context-sesion\SKILL.md"
-    Write-Host "[OK] Skill context-sesion instalada" -ForegroundColor Green
+$skillsSource = "backups\opencode\skills"
+if (Test-Path $skillsSource) {
+    Get-ChildItem "$skillsSource\*" -Directory | ForEach-Object {
+        $skillName = $_.Name
+        $skillFile = Join-Path $_.FullName "SKILL.md"
+        if (Test-Path $skillFile) {
+            New-Item -ItemType Directory -Path "$skillsTarget\$skillName" -Force | Out-Null
+            if ($skillName -eq "ameli-personal") {
+                $content = Get-Content $skillFile -Raw
+                $content = $content.Replace("__USER_NAME__", $userName)
+                Set-Content -Path "$skillsTarget\$skillName\SKILL.md" -Value $content
+            } else {
+                Copy-Item $skillFile "$skillsTarget\$skillName\SKILL.md"
+            }
+            Write-Host "[OK] Skill $skillName instalada" -ForegroundColor Green
+        }
+    }
 }
 if (Test-Path "backups\opencode\AGENTS.md") {
     $content = Get-Content "backups\opencode\AGENTS.md" -Raw
