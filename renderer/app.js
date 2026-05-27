@@ -905,6 +905,11 @@ async function initUpdater() {
     updateBar.classList.add('hidden')
   })
 
+  document.getElementById('btn-check-updates')?.addEventListener('click', () => {
+    updateCheckText.textContent = 'Buscando actualizaciones...'
+    window.electronAPI.checkForUpdates()
+  })
+
   window.electronAPI.checkForUpdates()
 }
 
