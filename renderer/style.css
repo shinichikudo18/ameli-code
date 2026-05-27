@@ -1,37 +1,37 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #06060F;
-  --bg2: #0D0D1A;
-  --bg3: #151525;
-  --surface: rgba(21, 21, 37, 0.85);
-  --accent: #18D9E6;
-  --accent-hover: #3CE0EB;
-  --accent-glow: rgba(24, 217, 230, 0.25);
-  --accent2: #0F708E;
-  --accent2-glow: rgba(15, 112, 142, 0.3);
-  --coral: #D45139;
-  --coral-hover: #E06048;
-  --coral-glow: rgba(212, 81, 57, 0.25);
-  --peach: #EE906D;
-  --warm: #F4C5AD;
-  --warm-dim: #D4A58D;
-  --gradient: linear-gradient(135deg, var(--accent), var(--coral));
-  --gradient-warm: linear-gradient(135deg, var(--peach), var(--coral));
-  --text: #F4C5AD;
-  --text-dim: #C4A58D;
-  --text-muted: #806050;
-  --border: rgba(24, 217, 230, 0.12);
-  --border-light: rgba(24, 217, 230, 0.25);
-  --success: #18D9E6;
-  --warning: #EE906D;
-  --radius: 10px;
-  --radius-sm: 6px;
-  --radius-lg: 16px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.5);
-  --shadow-lg: 0 8px 48px rgba(0,0,0,0.7);
-  --shadow-glow: 0 0 20px var(--accent-glow);
+  --bg: #050508;
+  --bg2: #0A0A12;
+  --bg3: #10101E;
+  --surface: rgba(8, 8, 20, 0.88);
+  --accent: #00E5A0;
+  --accent-hover: #20F0B0;
+  --accent-glow: rgba(0, 229, 160, 0.2);
+  --accent2: #0080B0;
+  --accent2-glow: rgba(0, 128, 176, 0.25);
+  --cyan: #00D4FF;
+  --cyan-dim: rgba(0, 212, 255, 0.3);
+  --magenta: #D030D0;
+  --magenta-glow: rgba(208, 48, 208, 0.2);
+  --text: #D0E8E0;
+  --text-dim: #90B0A8;
+  --text-muted: #507068;
+  --border: rgba(0, 229, 160, 0.1);
+  --border-light: rgba(0, 229, 160, 0.2);
+  --success: #00E5A0;
+  --warning: #E09040;
+  --gradient: linear-gradient(135deg, var(--accent), var(--cyan));
+  --gradient-warm: linear-gradient(135deg, var(--cyan), var(--magenta));
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 14px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.6);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,0.8);
+  --shadow-glow: 0 0 18px var(--accent-glow);
   --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --font-ui: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --font-text: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 .hidden {
@@ -39,7 +39,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-ui);
   background: var(--bg);
   color: var(--text);
   height: 100vh;
@@ -48,6 +48,7 @@ body {
   overflow: hidden;
   user-select: none;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.02em;
 }
 
 #titlebar {
@@ -55,7 +56,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(0, 0, 21, 0.95);
+  background: rgba(0, 0, 8, 0.98);
   backdrop-filter: blur(12px);
   padding: 8px 16px;
   height: 42px;
@@ -820,7 +821,7 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
   left: 0;
   right: 0;
   background: var(--bg3);
-  border-top: 1px solid var(--coral-glow);
+  border-top: 1px solid var(--cyan-dim);
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -888,7 +889,7 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
 }
 
 .opencode-missing strong {
-  color: var(--coral);
+  color: var(--cyan);
   font-size: 15px;
 }
 
