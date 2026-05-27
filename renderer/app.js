@@ -632,6 +632,12 @@ async function initUpdater() {
     btnInstall.classList.remove('hidden')
   })
 
+  window.electronAPI.onUpdateError((err) => {
+    updateCheckText.textContent = 'No se pudo verificar'
+    if (updateBar.classList.contains('hidden')) return
+    updateBar.classList.add('hidden')
+  })
+
   btnDownload.addEventListener('click', () => {
     btnDownload.disabled = true
     btnDownload.textContent = 'Descargando...'
