@@ -26,6 +26,10 @@ const skillsActiveCount = document.getElementById('skills-active-count')
 let defaultModel = ''
 let skillsData = []
 let activeSkills = JSON.parse(localStorage.getItem('ameli.activeSkills') || '[]')
+if (!activeSkills.includes('ameli-personal')) {
+  activeSkills.push('ameli-personal')
+  localStorage.setItem('ameli.activeSkills', JSON.stringify(activeSkills))
+}
 let lastProjectDir = localStorage.getItem('ameli.lastProjectDir') || ''
 let lastSessionId = localStorage.getItem('ameli.lastSessionId') || ''
 let restoringProject = false
