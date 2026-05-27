@@ -201,7 +201,7 @@
   ${If} $0 != 0
     FileWrite $9 "$\r$\n[5/5] Instalación automática fallida$\r$\n"
     DetailPrint "[5/5] Instalación automática fallida"
-    FileWrite $9 "  [INFO] Se ofrecerán opciones manuales al usuario$\r$\n"
+    FileWrite $9 "  [INFO] opencode no se pudo instalar automaticamente$\r$\n"
   ${EndIf}
 
 showResult:
@@ -213,13 +213,6 @@ showResult:
     MessageBox MB_OK "$\r$\n  opencode CLI instalado correctamente.$\r$\n$\r$\n  Log completo guardado en:$\r$\n  $8"
   ${Else}
     DetailPrint "No se pudo instalar opencode automaticamente."
-    MessageBox MB_YESNO "$\r$\n  No se pudo instalar opencode CLI automaticamente.$\r$\n$\r$\n  Para depurar, revisa el log:$\r$\n  $8$\r$\n$\r$\n  ¿Querés descargar Node.js para que$\r$\n  AMELI Code pueda instalar opencode?" IDYES installNode IDNO askOpen
-    installNode:
-      ExecShell "open" "https://nodejs.org"
-    askOpen:
-    MessageBox MB_YESNO "$\r$\n  ¿Querés ir a opencode.ai para$\r$\n  descargar opencode manualmente?" IDYES openOC IDNO done
-    openOC:
-      ExecShell "open" "https://opencode.ai"
-    done:
+    MessageBox MB_OK "$\r$\n  No se pudo instalar opencode CLI automaticamente.$\r$\n$\r$\n  Para depurar, revisa el log:$\r$\n  $8$\r$\n$\r$\n  AMELI Code puede seguir usandose, pero$\r$\n  las funciones de terminal requeriran$\r$\n  opencode instalado manualmente."
   ${EndIf}
 !macroend
