@@ -80,7 +80,7 @@
     FileWrite $9 "$\r$\n[3/5] Instalando opencode via npm...$\r$\n"
     DetailPrint "[3/5] Instalando opencode via npm..."
     FileWrite $9 "  Ejecutando: $2 install -g opencode-ai$\r$\n"
-    nsExec::ExecToStack '"cmd.exe" /c "$2 install -g opencode-ai"'
+    nsExec::ExecToStack '"$2" install -g opencode-ai'
     Pop $1
     Pop $5
     DetailPrint "$5"
@@ -99,17 +99,33 @@
     Pop $1
     ${If} $1 == 0
       FileWrite $9 "  [OK] winget install OpenJS.NodeJS.LTS exitoso$\r$\n"
-      FileWrite $9 "  [INFO] Ejecutando: npm install -g opencode-ai$\r$\n"
-      nsExec::ExecToStack '"cmd.exe" /c "npm install -g opencode-ai"'
-      Pop $1
-      Pop $5
-      DetailPrint "$5"
-      ${If} $1 == 0
-        StrCpy $0 0
-        FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
+      FileWrite $9 "  [INFO] Buscando npm en rutas de instalacion...$\r$\n"
+      StrCpy $2 ""
+      IfFileExists "$PROGRAMFILES64\nodejs\npm.cmd" 0 +3
+      StrCpy $2 "$PROGRAMFILES64\nodejs\npm.cmd"
+      ${If} $2 == ""
+        IfFileExists "$PROGRAMFILES\nodejs\npm.cmd" 0 +3
+        StrCpy $2 "$PROGRAMFILES\nodejs\npm.cmd"
+        ${If} $2 == ""
+          IfFileExists "$PROFILE\AppData\Roaming\npm\npm.cmd" 0 +3
+          StrCpy $2 "$PROFILE\AppData\Roaming\npm\npm.cmd"
+        ${EndIf}
+      ${EndIf}
+      ${If} $2 != ""
+        FileWrite $9 "  [INFO] Ejecutando: npm install -g opencode-ai$\r$\n"
+        nsExec::ExecToStack '"$2" install -g opencode-ai'
+        Pop $1
+        Pop $5
+        DetailPrint "$5"
+        ${If} $1 == 0
+          StrCpy $0 0
+          FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
+        ${Else}
+          FileWrite $9 "  [ERROR] npm install -g opencode-ai fall con codigo $1$\r$\n"
+          FileWrite $9 "  [npm output]:$\r$\n$5$\r$\n"
+        ${EndIf}
       ${Else}
-        FileWrite $9 "  [ERROR] npm install -g opencode-ai fall con codigo $1$\r$\n"
-        FileWrite $9 "  [npm output]:$\r$\n$5$\r$\n"
+        FileWrite $9 "  [ERROR] npm no encontrado despues de winget$\r$\n"
       ${EndIf}
     ${Else}
       FileWrite $9 "  [ERROR] winget fall con cdigo $1 (puede no estar disponible)$\r$\n"
