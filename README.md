@@ -18,7 +18,24 @@ App de AMELI para gestionar sesiones de OpenCode en escritorio.
 - `assets/logo/ameli-icon.png`
 - `assets/stickers/`
 
-## Skills y contexto
+## Razonamiento (reasoning)
+
+Cuando opencode procesa un mensaje, la API devuelve partes `type: "reasoning"` con el pensamiento intermedio del AI. AMELI Code los resume con íconos de accion:
+
+| Patron en el texto | Muestra |
+|---|---|
+| `run/executed/ing command` | `▶️ ejecutando <cmd>` |
+| `read/check/view file` | `🔍 leyendo <file>` |
+| `edit/modif/chang/updat file` | `✏️ editando <file>` |
+| `list/explor/scan/search dir` | `📂 explorando <dir>` |
+| `creat/add/writ file` | `➕ creando <file>` |
+| `install/build/compil/deploy` | `🔧 compilando <proj>` |
+| `connec/ssh/remote/server` | `🌐 conectando <host>` |
+
+El resumen se muestra en un bloque con borde verde (`⚡ build / plan`) antes de la respuesta final. Codigo relevante:
+
+- `renderer/app.js` → `summarizeReasoning()` + `ACTION_PATTERNS[]`
+- Si no hay match, se muestra la primer frase limpia del razonamiento
 
 Este repo incluye skills y contexto para AMELI:
 
