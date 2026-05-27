@@ -651,28 +651,16 @@ function showPermSetup() {
       }
     })
   }
-  const allowAllDiv = document.createElement('div')
-  allowAllDiv.style.cssText = 'padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:6px;align-items:center;'
-  allowAllDiv.innerHTML = '<button id="btn-perm-allow-all" class="btn-primary btn-sm" style="flex:1;">✅ Allow All</button><button id="btn-perm-deny-all" class="btn-secondary btn-sm" style="flex:1;">⛔ Deny All</button>'
-  permSetupList.appendChild(allowAllDiv)
   permSetupModal.classList.remove('hidden')
 }
 
-$('btn-perm-allow-all').onclick = () => {
-  permSetupList.querySelectorAll('.perm-entry').forEach(entry => {
-    const btn = entry.querySelector('.perm-btn[data-action="allow"]')
-    if (btn) {
-      btn.click()
-    }
-  })
+const allowAllBtn = document.getElementById('btn-perm-allow-all')
+const denyAllBtn = document.getElementById('btn-perm-deny-all')
+if (allowAllBtn) allowAllBtn.onclick = () => {
+  document.querySelectorAll('#perm-setup-list .perm-btn[data-action="allow"]').forEach(b => b.click())
 }
-$('btn-perm-deny-all').onclick = () => {
-  permSetupList.querySelectorAll('.perm-entry').forEach(entry => {
-    const btn = entry.querySelector('.perm-btn[data-action="deny"]')
-    if (btn) {
-      btn.click()
-    }
-  })
+if (denyAllBtn) denyAllBtn.onclick = () => {
+  document.querySelectorAll('#perm-setup-list .perm-btn[data-action="deny"]').forEach(b => b.click())
 }
 
 $('btn-perm-setup-apply').onclick = async () => {
