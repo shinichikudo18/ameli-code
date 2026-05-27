@@ -438,8 +438,10 @@ async function sendPrompt() {
 
   if (result && !result.error) {
     const mode = result.info?.mode || ''
-    const reasoning = (result.parts || []).filter(p => p.type === 'reasoning').map(p => p.text).join('\n\n')
+    const rawReasoning = (result.parts || []).filter(p => p.type === 'reasoning').map(p => p.text).join('\n\n')
     const assistantText = extractText(result.parts)
+
+    const reasoning = rawReasoning ? rawReasoning.split(/[.\n]/).filter(Boolean)[0] + '.' : ''
 
     if (reasoning || mode) {
       const div = document.createElement('div')

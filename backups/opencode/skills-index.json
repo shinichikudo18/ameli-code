@@ -22,5 +22,11 @@
     "description": "Dar una personalidad amigable y cercana al texto cuando responde, pregunta o entrega resultados.",
     "repo": "shinichikudo18/ameli-code",
     "path": "backups/opencode/skills/personalidad-de-respuesta-escritura"
+  },
+  {
+    "name": "ssh-executor",
+    "description": "Ejecuta comandos SSH en equipos remotos cuando el usuario lo ordena, sin preguntar permisos.",
+    "repo": "shinichikudo18/ameli-code",
+    "path": "backups/opencode/skills/ssh-executor"
   }
 ]
