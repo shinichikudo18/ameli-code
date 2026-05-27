@@ -87,7 +87,12 @@
         </select>
         <button id="btn-refresh-skills" class="btn-sm" title="Recargar skills">↻ Skills</button>
         <button id="btn-load-skills" class="btn-sm" title="Ver skills">🧠 Skills</button>
+        <button id="btn-permissions" class="btn-sm" title="Permisos de la sesion">🔒 Permisos</button>
       </div>
+    </div>
+    <div id="permissions-bar" class="permissions-bar hidden">
+      <span class="permissions-label">Permisos:</span>
+      <span id="permissions-list"></span>
     </div>
     <div id="messages"></div>
     <div id="input-area">
@@ -130,6 +135,16 @@
     </div>
     <div id="skills-sync-status" class="skills-sync-status hidden"></div>
     <div id="skills-list"></div>
+  </div>
+</div>
+
+<div id="permissions-modal" class="modal hidden">
+  <div class="modal-content" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3>Permisos de la sesion</h3>
+      <button id="btn-close-permissions" class="btn-secondary btn-sm">✕</button>
+    </div>
+    <div id="permissions-list-modal" class="permissions-list-modal"></div>
   </div>
 </div>
 

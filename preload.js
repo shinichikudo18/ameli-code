@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   renameProject: (opts) => ipcRenderer.invoke('rename-project', opts),
   deleteProject: (opts) => ipcRenderer.invoke('delete-project', opts),
   getUserName: () => ipcRenderer.invoke('get-user-name'),
+  getSessionPermissions: (opts) => ipcRenderer.invoke('get-session-permissions', opts),
+  setSessionPermission: (opts) => ipcRenderer.invoke('set-session-permission', opts),
 
   minimize: () => ipcRenderer.invoke('minimize-window'),
   maximize: () => ipcRenderer.invoke('maximize-window'),

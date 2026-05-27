@@ -511,6 +511,29 @@ select:focus { border-color: var(--accent2); box-shadow: 0 0 12px var(--accent2-
   30% { opacity: 1; transform: scale(1.1); }
 }
 
+.thinking-block {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.thinking-mode {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.thinking-text {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 #input-area {
   display: flex;
   gap: 8px;
@@ -599,6 +622,15 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
 }
 .btn-sm { padding: 5px 12px; font-size: 11px; }
 .btn-icon { padding: 10px 20px; }
+.input-sm {
+  padding: 5px 8px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-family: inherit;
+}
 
 .modal {
   position: fixed;
@@ -926,4 +958,72 @@ button, .btn-primary, .btn-secondary, .btn-sm, .btn-icon {
 .opencode-missing .btn-sm {
   font-size: 13px;
   padding: 6px 16px;
+}
+
+.permissions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.01);
+}
+.permissions-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.perm-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.perm-name {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 80px;
+}
+.perm-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.perm-btn {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.perm-btn:hover {
+  border-color: var(--border-light);
+  color: var(--text);
+}
+.perm-btn.active {
+  background: rgba(0, 229, 160, 0.15);
+  border-color: rgba(0, 229, 160, 0.3);
+  color: var(--accent);
+}
+.perm-pattern {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: monospace;
+  margin-left: 8px;
+}
+.perm-add {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  align-items: center;
+  border-top: 1px solid var(--border);
 }

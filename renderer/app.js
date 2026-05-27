@@ -25,6 +25,12 @@ const selectedModelBadge = document.getElementById('selected-model-badge')
 const skillsActiveCount = document.getElementById('skills-active-count')
 const btnSyncSkills = document.getElementById('btn-sync-skills')
 const skillsSyncStatus = document.getElementById('skills-sync-status')
+const permissionsBar = document.getElementById('permissions-bar')
+const permissionsList = document.getElementById('permissions-list')
+const permissionsModal = document.getElementById('permissions-modal')
+const permissionsListModal = document.getElementById('permissions-list-modal')
+const btnPermissions = document.getElementById('btn-permissions')
+let sessionPermissions = []
 let defaultModel = ''
 let skillsData = []
 let activeSkills = JSON.parse(localStorage.getItem('ameli.activeSkills') || '[]')
@@ -152,6 +158,8 @@ btnRefreshSkills.onclick = async () => {
   await loadSkillsModal(true)
 }
 btnSyncSkills.onclick = syncSkills
+btnPermissions.onclick = openPermissionsModal
+$('btn-close-permissions').onclick = () => permissionsModal.classList.add('hidden')
 
 modelSelect.onchange = () => {
   persistSessionModel()
@@ -369,6 +377,7 @@ async function selectSession(id) {
   }
   messagesEl.scrollTop = messagesEl.scrollHeight
   promptInput.focus()
+  loadSessionPermissions()
 }
 
 async function handleSessionAction(action, sessionId) {
@@ -428,8 +437,20 @@ async function sendPrompt() {
   if (loadingEl) loadingEl.remove()
 
   if (result && !result.error) {
+    const mode = result.info?.mode || ''
+    const reasoning = (result.parts || []).filter(p => p.type === 'reasoning').map(p => p.text).join('\n\n')
     const assistantText = extractText(result.parts)
-    addMessage('assistant', assistantText)
+
+    if (reasoning || mode) {
+      const div = document.createElement('div')
+      div.className = 'msg assistant'
+      div.innerHTML = `<div class="role-label">AMELI</div><div class="thinking-block">${mode ? `<div class="thinking-mode">⚡ ${mode}</div>` : ''}${reasoning ? `<div class="thinking-text">${escapeHtml(reasoning)}</div>` : ''}</div>`
+      messagesEl.appendChild(div)
+    }
+
+    if (assistantText) {
+      addMessage('assistant', assistantText)
+    }
   } else if (result?.error) {
     addMessage('system', `Error: ${result.error}`)
   }
@@ -545,6 +566,90 @@ async function syncSkills() {
   } finally {
     btnSyncSkills.disabled = false
   }
+}
+
+async function loadSessionPermissions() {
+  if (!currentSessionId) return
+  try {
+    sessionPermissions = await window.electronAPI.getSessionPermissions({ sessionId: currentSessionId })
+  } catch {
+    sessionPermissions = []
+  }
+  renderPermissionsBar()
+}
+
+function renderPermissionsBar() {
+  if (!sessionPermissions.length) {
+    permissionsBar.classList.add('hidden')
+    return
+  }
+  permissionsBar.classList.remove('hidden')
+  const parts = sessionPermissions.map(p => `${p.permission}=${p.action}`)
+  permissionsList.textContent = parts.join(', ')
+}
+
+async function openPermissionsModal() {
+  await loadSessionPermissions()
+  permissionsListModal.innerHTML = ''
+  if (!sessionPermissions.length) {
+    permissionsListModal.innerHTML = '<p style="color:var(--text-dim);padding:14px;">Sin permisos configurados</p>'
+  } else {
+    for (const perm of sessionPermissions) {
+      const div = document.createElement('div')
+      div.className = 'perm-entry'
+      div.innerHTML = `
+        <div class="perm-name">${perm.permission}</div>
+        <div class="perm-actions">
+          <button class="perm-btn ${perm.action === 'allow' ? 'active' : ''}" data-perm="${perm.permission}" data-action="allow">Allow</button>
+          <button class="perm-btn ${perm.action === 'ask' ? 'active' : ''}" data-perm="${perm.permission}" data-action="ask">Ask</button>
+          <button class="perm-btn ${perm.action === 'deny' ? 'active' : ''}" data-perm="${perm.permission}" data-action="deny">Deny</button>
+          <span class="perm-pattern">${perm.pattern || '*'}</span>
+        </div>`
+      permissionsListModal.appendChild(div)
+    }
+  }
+  const addDiv = document.createElement('div')
+  addDiv.className = 'perm-add'
+  addDiv.innerHTML = `
+    <select id="perm-new-name" class="input-sm">
+      <option value="shell">shell</option>
+      <option value="read">read</option>
+      <option value="write">write</option>
+      <option value="edit">edit</option>
+      <option value="run">run</option>
+      <option value="todowrite">todowrite</option>
+      <option value="task">task</option>
+    </select>
+    <select id="perm-new-action" class="input-sm">
+      <option value="allow">Allow</option>
+      <option value="ask">Ask</option>
+      <option value="deny">Deny</option>
+    </select>
+    <input id="perm-new-pattern" class="input-sm" placeholder="*" value="*" />
+    <button id="btn-perm-add" class="btn-primary btn-sm">+</button>`
+  permissionsListModal.appendChild(addDiv)
+
+  $('btn-perm-add').onclick = async () => {
+    const name = document.getElementById('perm-new-name').value
+    const action = document.getElementById('perm-new-action').value
+    const pattern = document.getElementById('perm-new-pattern').value || '*'
+    await window.electronAPI.setSessionPermission({ sessionId: currentSessionId, permission: name, action, pattern })
+    await openPermissionsModal()
+  }
+
+  permissionsListModal.querySelectorAll('.perm-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const perm = btn.dataset.perm
+      const action = btn.dataset.action
+      await window.electronAPI.setSessionPermission({ sessionId: currentSessionId, permission: perm, action, pattern: '*' })
+      await loadSessionPermissions()
+      renderPermissionsBar()
+      btn.closest('.perm-entry').querySelectorAll('.perm-btn').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+    }
+  })
+
+  permissionsModal.classList.remove('hidden')
 }
 
 skillsList.addEventListener('click', (e) => {

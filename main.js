@@ -616,6 +616,25 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('get-user-name', () => USER_NAME)
 
+  ipcMain.handle('get-session-permissions', async (_, { sessionId }) => {
+    if (!activePort || !sessionId) return []
+    try {
+      const session = await apiFetch(activePort, `/session/${sessionId}`)
+      return session?.permission || []
+    } catch { return [] }
+  })
+
+  ipcMain.handle('set-session-permission', async (_, { sessionId, permission, action, pattern }) => {
+    if (!activePort || !sessionId) return { ok: false }
+    try {
+      const session = await apiFetch(activePort, `/session/${sessionId}`)
+      const perms = (session?.permission || []).filter(p => p.permission !== permission)
+      perms.push({ permission, action, pattern: pattern || '*' })
+      await apiFetch(activePort, `/session/${sessionId}`, { method: 'PATCH', body: { permission: perms } })
+      return { ok: true }
+    } catch (e) { return { ok: false, error: e.message } }
+  })
+
   ipcMain.handle('minimize-window', () => mainWindow.minimize())
   ipcMain.handle('maximize-window', () => {
     if (mainWindow.isMaximized()) mainWindow.unmaximize()
