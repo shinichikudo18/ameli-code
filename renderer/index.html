@@ -101,6 +101,13 @@
     <h1>AMELI Code</h1>
     <p>Tu interfaz para manejar sesiones de opencode.</p>
     <p class="hint">Inicia <code>opencode serve</code> en una terminal, o usa "Nuevo proyecto".</p>
+    <div id="opencode-missing" class="opencode-missing hidden">
+      <span class="opencode-missing-icon">⚠️</span>
+      <strong>opencode CLI no está instalado</strong>
+      <p>AMELI Code necesita opencode para funcionar.</p>
+      <a class="btn-primary btn-sm" href="https://opencode.ai" target="_blank">Descargar opencode</a>
+      <button id="btn-retry-opencode" class="btn-secondary btn-sm">Reintentar</button>
+    </div>
     <div class="welcome-actions">
       <button id="btn-welcome-new-project" class="btn-primary">Nuevo proyecto</button>
     </div>

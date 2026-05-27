@@ -300,18 +300,25 @@ async function findServer(ports) {
 
 function startOpencodeServe(port, cwd) {
   return new Promise((resolve) => {
+    let started = false
     ocServeProcess = spawn('opencode', ['serve', '--port', String(port)], {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: cwd || DEFAULT_PROJECT_DIR,
       shell: true,
     })
+    ocServeProcess.on('error', (err) => {
+      if (!started) {
+        started = true
+        resolve(null)
+      }
+    })
     const check = async () => {
       for (let i = 0; i < 15; i++) {
         await new Promise(r => setTimeout(r, 1000))
         const found = await checkServer(port)
-        if (found) { resolve(found); return }
+        if (found) { started = true; resolve(found); return }
       }
-      resolve(null)
+      if (!started) { started = true; resolve(null) }
     }
     check()
   })
@@ -338,6 +345,12 @@ app.whenReady().then(async () => {
       if (p) {
         activePort = p
         sendToWindow('server-connected', { port: p })
+      } else {
+        runCommand('opencode', ['--version']).then((res) => {
+          if (res.code !== 0) {
+            sendToWindow('opencode-not-found', true)
+          }
+        })
       }
     })
   }

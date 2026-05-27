@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('electronAPI', {
   onServerConnected: (cb) => ipcRenderer.on('server-connected', (_, data) => cb(data)),
   onServerDisconnected: (cb) => ipcRenderer.on('server-disconnected', () => cb()),
+  onOpencodeNotFound: (cb) => ipcRenderer.on('opencode-not-found', () => cb()),
 
   getProviders: () => ipcRenderer.invoke('get-providers'),
   getModels: () => ipcRenderer.invoke('get-models'),

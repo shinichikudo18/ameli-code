@@ -585,6 +585,25 @@ async function bootstrapWorkspace() {
 
 bootstrapWorkspace()
 
+window.electronAPI.onOpencodeNotFound(() => {
+  const el = document.getElementById('opencode-missing')
+  const status = document.getElementById('auto-status')
+  if (el) el.classList.remove('hidden')
+  if (status) status.classList.add('hidden')
+})
+
+document.getElementById('btn-retry-opencode')?.addEventListener('click', () => {
+  const el = document.getElementById('opencode-missing')
+  const status = document.getElementById('auto-status')
+  if (el) el.classList.add('hidden')
+  if (status) {
+    status.classList.remove('hidden')
+    status.textContent = 'Reintentando...'
+  }
+  window.electronAPI.checkForUpdates()
+  location.reload()
+})
+
 function escapeHtml(str) {
   if (!str) return ''
   const div = document.createElement('div')

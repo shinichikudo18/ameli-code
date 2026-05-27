@@ -87,16 +87,6 @@ if ($ocPath) {
         }
     }
     if (-not $npmOk) {
-        $chocoPath = Get-Command "choco" -ErrorAction SilentlyContinue
-        if ($chocoPath) {
-            choco install opencode -y
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "[OK] opencode CLI instalado via chocolatey" -ForegroundColor Green
-                $npmOk = $true
-            }
-        }
-    }
-    if (-not $npmOk) {
         Write-Host "[WARN] No se pudo instalar opencode automaticamente." -ForegroundColor Yellow
         Write-Host "       Instalalo manualmente desde: https://opencode.ai" -ForegroundColor Cyan
     }
