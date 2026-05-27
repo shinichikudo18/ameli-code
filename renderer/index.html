@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AMELI Code</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="titlebar">
+  <div class="titlebar-left">
+    <img class="titlebar-logo" src="icon.png" alt="KC" />
+    <span class="title-text">AMELI Code</span>
+  </div>
+  <div class="title-controls">
+    <button class="tb-btn" id="btn-toggle-sidebar" title="Ocultar/Mostrar sidebar">☰</button>
+    <button class="tb-btn" onclick="window.electronAPI.minimize()">─</button>
+    <button class="tb-btn" onclick="window.electronAPI.maximize()">☐</button>
+    <button class="tb-btn close" onclick="window.electronAPI.close()">✕</button>
+  </div>
+</div>
+
+<div id="app-layout">
+<div id="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-header">
+      <h2>Proyecto</h2>
+    </div>
+    <div id="project-info" class="project-info">
+      <div class="project-current" id="current-project">
+        <span class="project-icon">📁</span>
+        <span class="project-name">Cargando...</span>
+      </div>
+      <button id="btn-new-project" class="btn-primary btn-sm" title="Abrir carpeta como proyecto">+ Nuevo proyecto</button>
+      <div id="rename-project-form" class="hidden rename-project-form">
+        <input type="text" id="rename-project-input" placeholder="Nuevo nombre..." />
+        <div class="form-actions rename-project-actions">
+          <button id="btn-rename-project-confirm" class="btn-primary btn-sm">Renombrar</button>
+          <button id="btn-rename-project-cancel" class="btn-secondary btn-sm">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div id="project-list" class="project-list"></div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-header">
+      <h2>Sesiones</h2>
+      <button id="btn-new-session" class="btn-primary btn-sm">+ Nueva</button>
+    </div>
+    <div id="new-session-form" class="hidden">
+      <input type="text" id="session-title" placeholder="Titulo de la sesion..." />
+      <div class="form-actions">
+        <button id="btn-create-session" class="btn-primary btn-sm">Crear</button>
+        <button id="btn-cancel-session" class="btn-secondary btn-sm">Cancelar</button>
+      </div>
+    </div>
+    <div id="rename-session-form" class="hidden rename-inline-form">
+      <input type="text" id="rename-session-input" placeholder="Nuevo nombre..." />
+      <div class="form-actions rename-inline-actions">
+        <button id="btn-rename-session-confirm" class="btn-primary btn-sm">Renombrar</button>
+        <button id="btn-rename-session-cancel" class="btn-secondary btn-sm">Cancelar</button>
+      </div>
+    </div>
+    <div id="session-list"></div>
+  </div>
+</div>
+
+<div id="main-content">
+  <div id="chat-container" class="hidden">
+    <div id="chat-header">
+    <div class="chat-header-left">
+    <img class="mini-logo" src="../assets/logo/ameli-icon.png" alt="" />
+        <div class="chat-title-wrap">
+          <span id="chat-title">Sesion sin titulo</span>
+          <span id="chat-meta">Selecciona una sesion</span>
+        </div>
+      </div>
+      <div class="chat-controls">
+        <button id="btn-refresh-models" class="btn-sm" title="Recargar modelos">↻ Modelos</button>
+        <select id="model-select"><option>Cargando modelos...</option></select>
+        <span id="selected-model-badge" class="badge" title="Modelo seleccionado">Sin modelo</span>
+        <select id="agent-select">
+          <option value="build">Build</option>
+          <option value="plan">Plan</option>
+        </select>
+        <button id="btn-refresh-skills" class="btn-sm" title="Recargar skills">↻ Skills</button>
+        <button id="btn-load-skills" class="btn-sm" title="Ver skills">🧠 Skills</button>
+        <button id="btn-stickers" class="btn-sm" title="Configurar stickers">🖼 Stickers</button>
+      </div>
+    </div>
+    <div id="messages"></div>
+    <div id="input-area">
+      <textarea id="prompt-input" rows="3" placeholder="Escribi tu prompt aca... (Enter para enviar, Shift+Enter para nueva linea)"></textarea>
+      <button id="btn-send" class="btn-primary btn-icon">Enviar</button>
+    </div>
+  </div>
+
+  <div id="welcome" class="welcome">
+    <img class="welcome-logo" src="../assets/logo/ameli-icon.png" alt="KC" />
+    <h1>AMELI Code</h1>
+    <p>Tu interfaz para manejar sesiones de opencode.</p>
+    <p class="hint">Inicia <code>opencode serve</code> en una terminal, o usa "Nuevo proyecto".</p>
+    <div class="welcome-actions">
+      <button id="btn-welcome-new-project" class="btn-primary">Nuevo proyecto</button>
+    </div>
+    <div class="auto-connect-indicator" id="auto-status">Buscando servidor local...</div>
+  </div>
+</div>
+</div>
+
+<div id="skills-modal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h3>Skills disponibles</h3>
+        <span id="skills-active-count" class="badge">0 activas</span>
+      </div>
+      <button id="btn-close-skills" class="btn-secondary btn-sm">✕</button>
+    </div>
+    <div id="skills-list"></div>
+  </div>
+</div>
+
+<div id="stickers-modal" class="modal hidden">
+  <div class="modal-content stickers-modal-content">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <h3>Stickers</h3>
+        <span id="stickers-enabled-count" class="badge">0 activos</span>
+      </div>
+      <button id="btn-close-stickers" class="btn-secondary btn-sm">✕</button>
+    </div>
+    <div class="stickers-toolbar">
+      <label class="switch-row">
+        <input id="stickers-master-toggle" type="checkbox" />
+        <span>Stickers automaticos</span>
+      </label>
+      <div class="stickers-toolbar-actions">
+        <button id="btn-add-stickers" class="btn-primary btn-sm">+ Agregar</button>
+        <span id="stickers-master-state" class="badge">apagados</span>
+      </div>
+    </div>
+    <p class="stickers-help">Elegí en qué caso se usa cada sticker. AMELI los mostrará sola cuando detecte ese contexto.</p>
+    <div id="stickers-sync-status" class="stickers-sync-status"></div>
+    <div id="stickers-list"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

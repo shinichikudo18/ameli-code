@@ -1,0 +1,12 @@
+{
+  "name": "ameli-code",
+  "version": "1.0.0",
+  "description": "App de AMELI para gestionar sesiones de opencode",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^32.3.3"
+  }
+}
