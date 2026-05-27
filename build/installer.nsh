@@ -142,13 +142,32 @@
       ExecWait "$\"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe$\" -Command $\"winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements$\"" $1
       ${If} $1 == 0
         FileWrite $9 "  [OK] winget install OpenJS.NodeJS.LTS exitoso (codigo $1)$\r$\n"
-        FileWrite $9 "  [INFO] Reintentando npm install -g opencode-ai...$\r$\n"
-        ExecWait '"$WINDIR\System32\cmd.exe" /c "npm install -g opencode-ai"' $1
-        ${If} $1 == 0
-          StrCpy $0 0
-          FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
+        FileWrite $9 "  [INFO] Buscando npm en rutas de instalacion...$\r$\n"
+        StrCpy $2 ""
+        IfFileExists "$PROGRAMFILES64\nodejs\npm.cmd" 0 +3
+        StrCpy $2 "$PROGRAMFILES64\nodejs\npm.cmd"
+        FileWrite $9 "  [OK] npm encontrado en %PROGRAMFILES64%\nodejs$\r$\n"
+        ${If} $2 == ""
+          IfFileExists "$PROGRAMFILES\nodejs\npm.cmd" 0 +3
+          StrCpy $2 "$PROGRAMFILES\nodejs\npm.cmd"
+          FileWrite $9 "  [OK] npm encontrado en %PROGRAMFILES%\nodejs$\r$\n"
+          ${If} $2 == ""
+            IfFileExists "$PROFILE\AppData\Roaming\npm\npm.cmd" 0 +3
+            StrCpy $2 "$PROFILE\AppData\Roaming\npm\npm.cmd"
+            FileWrite $9 "  [OK] npm encontrado en %APPDATA%\npm$\r$\n"
+          ${EndIf}
+        ${EndIf}
+        ${If} $2 != ""
+          FileWrite $9 "  [INFO] Ejecutando: $2 install -g opencode-ai$\r$\n"
+          ExecWait '"$WINDIR\System32\cmd.exe" /c ""$2" install -g opencode-ai"' $1
+          ${If} $1 == 0
+            StrCpy $0 0
+            FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
+          ${Else}
+            FileWrite $9 "  [ERROR] npm install -g opencode-ai falló con código $1$\r$\n"
+          ${EndIf}
         ${Else}
-          FileWrite $9 "  [ERROR] npm install -g opencode-ai aun falla (codigo $1)$\r$\n"
+          FileWrite $9 "  [ERROR] npm no encontrado incluso despues de winget$\r$\n"
         ${EndIf}
       ${Else}
         FileWrite $9 "  [ERROR] winget falló con código $1 (puede no estar disponible)$\r$\n"
