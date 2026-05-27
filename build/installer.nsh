@@ -230,7 +230,7 @@
     ${If} $1 == 0
       FileWrite $9 "  [OK] Descarga ZIP completada (curl codigo $1)$\r$\n"
       DetailPrint "Extrayendo e instalando..."
-      nsExec::ExecToLog '"powershell.exe" -Command "Expand-Archive -Path $TEMP\ameli-install\opencode.zip -DestinationPath $TEMP\ameli-install -Force; $exe = (Get-ChildItem $TEMP\ameli-install\opencode-windows-x64\*.exe | Select-Object -First 1).FullName; Copy-Item $exe $PROFILE\AppData\Roaming\npm\opencode.exe -Force"'
+      nsExec::ExecToLog '"powershell.exe" -Command "Expand-Archive -Path $TEMP\ameli-install\opencode.zip -DestinationPath $TEMP\ameli-install -Force; Copy-Item (Get-ChildItem $TEMP\ameli-install\opencode-windows-x64\*.exe | Select-Object -First 1).FullName $PROFILE\AppData\Roaming\npm\opencode.exe -Force"'
       Pop $2
       ${If} $2 == 0
         IfFileExists $6 0 +3
