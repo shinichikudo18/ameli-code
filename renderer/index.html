@@ -87,7 +87,6 @@
         </select>
         <button id="btn-refresh-skills" class="btn-sm" title="Recargar skills">↻ Skills</button>
         <button id="btn-load-skills" class="btn-sm" title="Ver skills">🧠 Skills</button>
-        <button id="btn-stickers" class="btn-sm" title="Configurar stickers">🖼 Stickers</button>
       </div>
     </div>
     <div id="messages"></div>
@@ -122,32 +121,6 @@
     <div id="skills-list"></div>
   </div>
 </div>
-
-<div id="stickers-modal" class="modal hidden">
-  <div class="modal-content stickers-modal-content">
-    <div class="modal-header">
-      <div class="modal-header-left">
-        <h3>Stickers</h3>
-        <span id="stickers-enabled-count" class="badge">0 activos</span>
-      </div>
-      <button id="btn-close-stickers" class="btn-secondary btn-sm">✕</button>
-    </div>
-    <div class="stickers-toolbar">
-      <label class="switch-row">
-        <input id="stickers-master-toggle" type="checkbox" />
-        <span>Stickers automaticos</span>
-      </label>
-      <div class="stickers-toolbar-actions">
-        <button id="btn-add-stickers" class="btn-primary btn-sm">+ Agregar</button>
-        <span id="stickers-master-state" class="badge">apagados</span>
-      </div>
-    </div>
-    <p class="stickers-help">Elegí en qué caso se usa cada sticker. AMELI los mostrará sola cuando detecte ese contexto.</p>
-    <div id="stickers-sync-status" class="stickers-sync-status"></div>
-    <div id="stickers-list"></div>
-  </div>
-</div>
-
 <script src="app.js"></script>
 </body>
 </html>

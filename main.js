@@ -4,7 +4,6 @@ const path = require('path')
 const http = require('http')
 const { spawn } = require('child_process')
 const fs = require('fs')
-const { pathToFileURL } = require('url')
 const fsp = fs.promises
 
 let mainWindow
@@ -13,8 +12,6 @@ let ocServeProcess = null
 let isQuitting = false
 const API_BASE = 'http://localhost'
 const REPO_ROOT = path.resolve(__dirname)
-const STICKERS_DIR = path.join(REPO_ROOT, 'assets', 'stickers')
-
 const CONFIG_PATH = path.join(os.homedir(), '.config', 'ameli-code', 'config.json')
 let appConfig = {}
 try { appConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) } catch {}
@@ -100,22 +97,6 @@ function collectSkillsFromDir(dir, results, seen) {
   }
 }
 
-function normalizeStickerName(fileName) {
-  return path.parse(fileName).name.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
-function sanitizeStickerFileName(fileName) {
-  const parsed = path.parse(fileName)
-  const base = parsed.name
-    .normalize('NFKD')
-    .replace(/[^a-zA-Z0-9._ -]+/g, '')
-    .replace(/[\/]+/g, '_')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^\.+/, '')
-  return `${base || 'sticker'}${parsed.ext ? parsed.ext.toLowerCase() : '.png'}`
-}
-
 function runCommand(command, args, options = {}) {
   return new Promise((resolve) => {
     const child = spawn(command, args, {
@@ -130,114 +111,6 @@ function runCommand(command, args, options = {}) {
     child.on('error', (error) => resolve({ code: -1, stdout, stderr: error.message }))
     child.on('close', (code) => resolve({ code, stdout, stderr }))
   })
-}
-
-async function uniqueStickerPath(fileName) {
-  const parsed = path.parse(fileName)
-  let candidate = path.join(STICKERS_DIR, fileName)
-  if (!fs.existsSync(candidate)) return candidate
-
-  for (let i = 1; i < 1000; i++) {
-    candidate = path.join(STICKERS_DIR, `${parsed.name}-${i}${parsed.ext || '.png'}`)
-    if (!fs.existsSync(candidate)) return candidate
-  }
-
-  throw new Error('No se pudo generar un nombre unico para el sticker')
-}
-
-async function copyStickerIntoRepo(sourcePath) {
-  await fsp.mkdir(STICKERS_DIR, { recursive: true })
-  const safeName = sanitizeStickerFileName(path.basename(sourcePath))
-  const targetPath = await uniqueStickerPath(safeName)
-  await fsp.copyFile(sourcePath, targetPath)
-  return {
-    sourcePath,
-    fileName: path.basename(targetPath),
-    path: targetPath,
-    fileUrl: pathToFileURL(targetPath).href,
-  }
-}
-
-async function syncStickerRepo(importedNames = []) {
-  const pull = await runCommand('git', ['pull', '--rebase', '--autostash'])
-  if (pull.code !== 0) {
-    return {
-      ok: false,
-      step: 'pull',
-      error: (pull.stderr || pull.stdout || 'No se pudo actualizar desde GitHub').trim(),
-    }
-  }
-
-  const add = await runCommand('git', ['add', 'assets/stickers'])
-  if (add.code !== 0) {
-    return {
-      ok: false,
-      step: 'add',
-      error: (add.stderr || add.stdout || 'No se pudieron agregar los stickers').trim(),
-    }
-  }
-
-  const commitMessage = importedNames.length === 1
-    ? `add sticker ${importedNames[0]}`
-    : `add stickers ${importedNames.slice(0, 3).join(', ')}${importedNames.length > 3 ? '...' : ''}`
-
-  const commit = await runCommand('git', [
-    '-c', 'user.name=Katherine',
-    '-c', 'user.email=ameli@users.noreply.github.com',
-    'commit', '-m', commitMessage,
-  ])
-
-  const commitOutput = `${commit.stdout || ''}\n${commit.stderr || ''}`.trim()
-  if (commit.code !== 0 && !/nothing to commit/i.test(commitOutput)) {
-    return {
-      ok: false,
-      step: 'commit',
-      error: commitOutput || 'No se pudo crear el commit',
-    }
-  }
-
-  const push = await runCommand('git', ['push'])
-  if (push.code !== 0) {
-    return {
-      ok: false,
-      step: 'push',
-      error: (push.stderr || push.stdout || 'No se pudo hacer push a GitHub').trim(),
-    }
-  }
-
-  return {
-    ok: true,
-    message: 'Stickers guardados en GitHub',
-  }
-}
-
-async function importStickerFiles(filePaths) {
-  const imported = []
-  for (const sourcePath of filePaths) {
-    imported.push(await copyStickerIntoRepo(sourcePath))
-  }
-  return imported
-}
-
-function collectStickersFromDir(dir, results, seen) {
-  if (!dir || !fs.existsSync(dir)) return
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const entryPath = path.join(dir, entry.name)
-    if (entry.isDirectory()) {
-      collectStickersFromDir(entryPath, results, seen)
-      continue
-    }
-    if (!/\.(png|jpe?g|webp|gif)$/i.test(entry.name)) continue
-    const key = entryPath.toLowerCase()
-    if (seen.has(key)) continue
-    seen.add(key)
-    results.push({
-      name: normalizeStickerName(entry.name),
-      fileName: entry.name,
-      path: entryPath,
-      fileUrl: pathToFileURL(entryPath).href,
-    })
-  }
 }
 
 async function listAvailableModels(port) {
@@ -297,16 +170,6 @@ async function listSkills(port) {
     }
   } catch {}
 
-  return results
-}
-
-async function listStickers() {
-  const results = []
-  const seen = new Set()
-  const home = os.homedir()
-  collectStickersFromDir(STICKERS_DIR, results, seen)
-  collectStickersFromDir(path.join(home, 'Descargas', 'stickers'), results, seen)
-  collectStickersFromDir(path.join(home, 'Downloads', 'stickers'), results, seen)
   return results
 }
 
@@ -450,32 +313,6 @@ app.whenReady().then(async () => {
   ipcMain.handle('list-skills', async () => {
     if (!activePort) return []
     try { return await listSkills(activePort) } catch { return [] }
-  })
-
-  ipcMain.handle('list-stickers', async () => {
-    try { return await listStickers() } catch { return [] }
-  })
-
-  ipcMain.handle('import-stickers', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Agregar stickers',
-      properties: ['openFile', 'multiSelections'],
-      filters: [
-        { name: 'Imagenes', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
-      ],
-    })
-
-    if (result.canceled || !result.filePaths.length) {
-      return { ok: false, cancelled: true }
-    }
-
-    try {
-      const imported = await importStickerFiles(result.filePaths)
-      const sync = await syncStickerRepo(imported.map((item) => item.fileName))
-      return { ok: true, imported, sync }
-    } catch (error) {
-      return { ok: false, error: error.message }
-    }
   })
 
   ipcMain.handle('get-sessions', async () => {

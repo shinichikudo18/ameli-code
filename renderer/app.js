@@ -21,22 +21,11 @@ const btnToggleSidebar = document.getElementById('btn-toggle-sidebar')
 const chatMeta = document.getElementById('chat-meta')
 const btnRefreshModels = document.getElementById('btn-refresh-models')
 const btnRefreshSkills = document.getElementById('btn-refresh-skills')
-const btnStickers = document.getElementById('btn-stickers')
 const selectedModelBadge = document.getElementById('selected-model-badge')
 const skillsActiveCount = document.getElementById('skills-active-count')
-const stickersModal = document.getElementById('stickers-modal')
-const stickersList = document.getElementById('stickers-list')
-const stickersEnabledCount = document.getElementById('stickers-enabled-count')
-const stickersMasterToggle = document.getElementById('stickers-master-toggle')
-const stickersMasterState = document.getElementById('stickers-master-state')
-const btnAddStickers = document.getElementById('btn-add-stickers')
-const stickersSyncStatus = document.getElementById('stickers-sync-status')
 let defaultModel = ''
 let skillsData = []
-let stickersData = []
 let activeSkills = JSON.parse(localStorage.getItem('ameli.activeSkills') || '[]')
-let stickerRules = JSON.parse(localStorage.getItem('ameli.stickerRules') || '{}')
-let stickersEnabled = JSON.parse(localStorage.getItem('ameli.stickersEnabled') || 'true')
 let lastProjectDir = localStorage.getItem('ameli.lastProjectDir') || ''
 let lastSessionId = localStorage.getItem('ameli.lastSessionId') || ''
 let restoringProject = false
@@ -146,50 +135,11 @@ promptInput.onkeydown = (e) => {
 
 $('btn-load-skills').onclick = loadSkillsModal
 $('btn-close-skills').onclick = () => skillsModal.classList.add('hidden')
-btnStickers.onclick = () => loadStickersModal()
-document.getElementById('btn-close-stickers').onclick = () => stickersModal.classList.add('hidden')
 btnRefreshModels.onclick = async () => {
   await loadProviders()
 }
 btnRefreshSkills.onclick = async () => {
   await loadSkillsModal(true)
-}
-if (stickersMasterToggle) {
-  stickersMasterToggle.checked = stickersEnabled
-  stickersMasterToggle.onchange = () => {
-    stickersEnabled = stickersMasterToggle.checked
-    localStorage.setItem('ameli.stickersEnabled', JSON.stringify(stickersEnabled))
-    updateStickersMasterState()
-  }
-}
-
-if (btnAddStickers) {
-  btnAddStickers.onclick = async () => {
-    if (stickersSyncStatus) stickersSyncStatus.textContent = 'Elegí los stickers...'
-    btnAddStickers.disabled = true
-    try {
-      const result = await window.electronAPI.importStickers()
-      if (result?.cancelled) {
-        if (stickersSyncStatus) stickersSyncStatus.textContent = 'Importación cancelada'
-        return
-      }
-      if (!result?.ok) {
-        if (stickersSyncStatus) stickersSyncStatus.textContent = result?.error || 'No se pudieron importar los stickers'
-        return
-      }
-      await loadStickers()
-      renderStickers()
-      if (result.sync?.ok) {
-        if (stickersSyncStatus) stickersSyncStatus.textContent = `Guardado en GitHub: ${result.imported.length} sticker(s)`
-      } else if (result.sync?.error) {
-        if (stickersSyncStatus) stickersSyncStatus.textContent = `Se copiaron ${result.imported.length}, pero falló GitHub: ${result.sync.error}`
-      } else {
-        if (stickersSyncStatus) stickersSyncStatus.textContent = `Se copiaron ${result.imported.length} sticker(s)`
-      }
-    } finally {
-      btnAddStickers.disabled = false
-    }
-  }
 }
 
 modelSelect.onchange = () => {
@@ -357,11 +307,6 @@ async function loadProviders() {
   updateSelectedModelBadge()
 }
 
-async function loadStickers() {
-  stickersData = await window.electronAPI.listStickers()
-  return stickersData
-}
-
 async function loadSessions() {
   sessions = await window.electronAPI.listSessions() || []
   sessionList.innerHTML = ''
@@ -452,17 +397,12 @@ async function sendPrompt() {
 
   const model = modelSelect.value || undefined
   const agent = agentSelect.value
-  const shortcutSticker = maybeHandleStickerShortcut(text)
   const effectiveText = activeSkills.length
     ? `Skills activas para esta operacion: ${activeSkills.join(', ')}\n\n${text}`
     : text
 
   addMessage('user', text)
   promptInput.value = ''
-
-  if (shortcutSticker) {
-    addStickerMessage(shortcutSticker)
-  }
 
   const tempId = 'loading-' + Date.now()
   const loadingDiv = document.createElement('div')
@@ -479,7 +419,6 @@ async function sendPrompt() {
   if (result && !result.error) {
     const assistantText = extractText(result.parts)
     addMessage('assistant', assistantText)
-    maybeAttachSticker(assistantText)
   } else if (result?.error) {
     addMessage('system', `Error: ${result.error}`)
   }
@@ -612,10 +551,6 @@ function updateSkillsActiveCount() {
   skillsActiveCount.textContent = `${activeSkills.length} activas`
 }
 
-function updateStickersMasterState() {
-  stickersMasterState.textContent = stickersEnabled ? 'activos' : 'apagados'
-}
-
 async function restoreLastSession() {
   if (!lastSessionId) return
   const match = sessions.find(s => s.id === lastSessionId)
@@ -630,127 +565,11 @@ async function bootstrapWorkspace() {
     await autoRestoreLastProject()
   }
 
-  await Promise.all([loadProject(), loadProviders(), loadSessions(), loadStickers(), loadProjects()])
+  await Promise.all([loadProject(), loadProviders(), loadSessions(), loadProjects()])
   await restoreLastSession()
 }
 
 bootstrapWorkspace()
-
-function stickerContextOptions() {
-  return [
-    { value: '', label: 'Desactivado' },
-    { value: 'saludo', label: 'Saludo' },
-    { value: 'gracias', label: 'Gracias' },
-    { value: 'vamos', label: 'Vamos a crear' },
-    { value: 'error', label: 'Error' },
-    { value: 'ayuda', label: 'Ayuda' },
-    { value: 'ocupada', label: 'Ocupada' },
-    { value: 'celebrar', label: 'Celebrar' },
-  ]
-}
-
-function detectStickerContext(text) {
-  const value = (text || '').toLowerCase()
-  const firstLine = value.split(/\r?\n/)[0] || ''
-  if (/\bvamos a crear\b/.test(firstLine)) return 'vamos'
-  if (/gracias\b|grac[ii]as\b|thank/.test(value)) return 'gracias'
-  if (/hola|buen[oa]s?|hey/.test(value)) return 'saludo'
-  if (/error|fallo|falló|failed|no pude|no se pudo/.test(value)) return 'error'
-  if (/ayuda|te ayudo|puedo ayudar|si quieres|si queres/.test(value)) return 'ayuda'
-  if (/ocupad|ahora no|más tarde|mas tarde|luego/.test(value)) return 'ocupada'
-  if (/listo|genial|perfecto|logramos|hecho|bien ahí|bien ahi/.test(value)) return 'celebrar'
-  return ''
-}
-
-function detectStickerShortcut(text) {
-  const value = (text || '').toLowerCase().trim()
-  const firstLine = value.split(/\r?\n/)[0] || ''
-  if (/^gracias\b|\bgracias\b/.test(value)) return 'gracias'
-  if (/\bvamos a crear\b/.test(firstLine)) return 'vamos'
-  return ''
-}
-
-function getStickerForContext(context) {
-  if (!context) return null
-  const matches = stickersData.filter(sticker => stickerRules[sticker.path] === context)
-  if (!matches.length) return null
-  return matches[Math.floor(Math.random() * matches.length)]
-}
-
-function maybeAttachSticker(text) {
-  if (!stickersEnabled) return
-  const context = detectStickerContext(text)
-  const sticker = getStickerForContext(context)
-  if (!sticker) return
-  addStickerMessage(sticker)
-  messagesEl.scrollTop = messagesEl.scrollHeight
-}
-
-function maybeHandleStickerShortcut(text) {
-  if (!stickersEnabled) return null
-  const context = detectStickerShortcut(text)
-  if (!context) return null
-  const sticker = getStickerForContext(context)
-  return sticker
-}
-
-function addStickerMessage(sticker) {
-  const wrap = document.createElement('div')
-  wrap.className = 'msg assistant sticker-bubble'
-  wrap.innerHTML = `<img src="${sticker.fileUrl}" alt="${escapeHtml(sticker.name)}" title="${escapeHtml(sticker.name)}" />`
-  messagesEl.appendChild(wrap)
-}
-
-async function loadStickersModal(forceReload = false) {
-  stickersModal.classList.remove('hidden')
-  if (forceReload || !stickersData.length) await loadStickers()
-  stickersMasterToggle.checked = stickersEnabled
-  updateStickersMasterState()
-  if (stickersSyncStatus) stickersSyncStatus.textContent = ''
-  renderStickers()
-}
-
-function renderStickers() {
-  stickersList.innerHTML = ''
-  stickersEnabledCount.textContent = `${Object.values(stickerRules).filter(Boolean).length} activos`
-
-  if (!stickersData.length) {
-    stickersList.innerHTML = '<p style="color:var(--text-dim)">No hay stickers encontrados en Descargas/stickers</p>'
-    return
-  }
-
-  for (const sticker of stickersData) {
-    const current = stickerRules[sticker.path] || ''
-    const row = document.createElement('div')
-    row.className = 'sticker-entry'
-    row.innerHTML = `
-      <img class="sticker-preview" src="${sticker.fileUrl}" alt="${escapeHtml(sticker.name)}" />
-      <div class="sticker-entry-main">
-        <div class="sticker-name">${escapeHtml(sticker.name)} <span class="badge">sticker</span></div>
-        <div class="sticker-path">${escapeHtml(sticker.path)}</div>
-        <div class="sticker-row">
-          <select class="sticker-select"></select>
-          <span class="sticker-pill">${current ? `Caso: ${current}` : 'Apagado'}</span>
-        </div>
-      </div>`
-
-    const select = row.querySelector('.sticker-select')
-    for (const option of stickerContextOptions()) {
-      const opt = new Option(option.label, option.value)
-      if (option.value === current) opt.selected = true
-      select.appendChild(opt)
-    }
-    select.onchange = () => {
-      if (select.value) stickerRules[sticker.path] = select.value
-      else delete stickerRules[sticker.path]
-      localStorage.setItem('ameli.stickerRules', JSON.stringify(stickerRules))
-      renderStickers()
-    }
-    stickersList.appendChild(row)
-  }
-
-  updateStickersMasterState()
-}
 
 function escapeHtml(str) {
   if (!str) return ''

@@ -7,8 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getProviders: () => ipcRenderer.invoke('get-providers'),
   getModels: () => ipcRenderer.invoke('get-models'),
   getDefaultModel: () => ipcRenderer.invoke('get-default-model'),
-  listStickers: () => ipcRenderer.invoke('list-stickers'),
-  importStickers: () => ipcRenderer.invoke('import-stickers'),
   listSessions: () => ipcRenderer.invoke('get-sessions'),
   createSession: (opts) => ipcRenderer.invoke('create-session', opts),
   updateSession: (opts) => ipcRenderer.invoke('update-session', opts),
