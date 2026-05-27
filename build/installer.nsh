@@ -4,9 +4,28 @@
 
   StrCpy $0 0
 
-  ExecWait '"$WINDIR\System32\cmd.exe" /c "where opencode >nul 2>nul"' $0
+  ExecWait '"$WINDIR\System32\cmd.exe" /c "opencode --version >nul 2>nul"' $0
+  ${If} $0 != 0
+    ExecWait '"$WINDIR\System32\cmd.exe" /c "where opencode >nul 2>nul"' $0
+  ${EndIf}
   ${If} $0 != 0
     IfFileExists "$PROFILE\AppData\Roaming\npm\opencode.exe" 0 +2
+    StrCpy $0 0
+  ${EndIf}
+  ${If} $0 != 0
+    IfFileExists "$PROFILE\AppData\Local\opencode\opencode-windows-x64\opencode.exe" 0 +2
+    StrCpy $0 0
+  ${EndIf}
+  ${If} $0 != 0
+    IfFileExists "$PROFILE\AppData\Local\opencode\opencode.exe" 0 +2
+    StrCpy $0 0
+  ${EndIf}
+  ${If} $0 != 0
+    IfFileExists "$PROGRAMFILES64\nodejs\opencode.exe" 0 +2
+    StrCpy $0 0
+  ${EndIf}
+  ${If} $0 != 0
+    IfFileExists "$PROGRAMFILES\nodejs\opencode.exe" 0 +2
     StrCpy $0 0
   ${EndIf}
 
