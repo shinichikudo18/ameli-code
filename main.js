@@ -283,6 +283,29 @@ autoUpdater.on('error', (err) => {
   send('update-error', { message: err ? (err.message || String(err)) : 'Error desconocido' })
 })
 
+function checkUpdateFallback() {
+  const send = (ch, d) => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(ch, d) }
+  const currentVersion = app.getVersion()
+  const req = http.get('http://raw.githubusercontent.com/shinichikudo18/ameli-code/main/version.json', (res) => {
+    let data = ''
+    res.on('data', (chunk) => data += chunk)
+    res.on('end', () => {
+      try {
+        const v = JSON.parse(data)
+        if (v.latest && v.latest !== currentVersion) {
+          send('update-available', { version: v.latest, releaseDate: '' })
+        } else {
+          send('update-not-available', true)
+        }
+      } catch {
+        send('update-not-available', true)
+      }
+    })
+  })
+  req.on('error', () => {})
+  req.setTimeout(8000, () => { req.destroy() })
+}
+
 async function checkServer(port) {
   try {
     const res = await apiFetch(port, '/global/health')
@@ -358,6 +381,10 @@ app.whenReady().then(async () => {
   setTimeout(() => {
     autoUpdater.checkForUpdates()
   }, 5000)
+
+  setTimeout(() => {
+    checkUpdateFallback()
+  }, 15000)
 
   ipcMain.handle('get-providers', async () => {
     if (!activePort) return null
@@ -512,6 +539,7 @@ app.whenReady().then(async () => {
       autoUpdater.checkForUpdates()
       return { ok: true }
     } catch (e) {
+      checkUpdateFallback()
       return { ok: false, error: e.message }
     }
   })

@@ -589,7 +589,10 @@ window.electronAPI.onOpencodeNotFound(() => {
   const el = document.getElementById('opencode-missing')
   const status = document.getElementById('auto-status')
   if (el) el.classList.remove('hidden')
-  if (status) status.classList.add('hidden')
+  if (status) {
+    status.textContent = 'opencode CLI no encontrado'
+    status.classList.add('hidden')
+  }
 })
 
 document.getElementById('btn-retry-opencode')?.addEventListener('click', () => {
@@ -652,10 +655,16 @@ async function initUpdater() {
   })
 
   window.electronAPI.onUpdateError((err) => {
-    updateCheckText.textContent = 'No se pudo verificar'
-    if (updateBar.classList.contains('hidden')) return
-    updateBar.classList.add('hidden')
+    if (!updateBar.classList.contains('hidden')) {
+      updateBar.classList.add('hidden')
+    }
   })
+
+  setTimeout(() => {
+    if (updateCheckText.textContent === 'Buscando actualizaciones...') {
+      updateCheckText.textContent = 'No se pudo verificar'
+    }
+  }, 25000)
 
   btnDownload.addEventListener('click', () => {
     btnDownload.disabled = true
