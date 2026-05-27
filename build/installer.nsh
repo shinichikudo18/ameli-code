@@ -107,24 +107,52 @@
     ${EndIf}
 
     ${If} $3 != ""
-      FileWrite $9 "  [INFO] Node.js detectado. Instalando npm via PowerShell...$\r$\n"
-      DetailPrint "Node.js detectado. Instalando npm..."
-      ExecWait "$\"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe$\" -Command $\"npm install npm@latest -g$\"" $1
+      FileWrite $9 "  [INFO] Node.js instalado pero npm no encontrado. Usando npm directo desde Node.js...$\r$\n"
+      DetailPrint "Node.js detectado. Buscando npm-cli.js..."
+      StrCpy $4 ""
+      IfFileExists "$PROFILE\AppData\Roaming\npm\node_modules\npm\bin\npm-cli.js" 0 +3
+      StrCpy $4 "$PROFILE\AppData\Roaming\npm\node_modules\npm\bin\npm-cli.js"
+      FileWrite $9 "  [OK] npm-cli.js encontrado en %APPDATA%\npm\$\r$\n"
+      ${If} $4 == ""
+        IfFileExists "$PROGRAMFILES64\nodejs\node_modules\npm\bin\npm-cli.js" 0 +3
+        StrCpy $4 "$PROGRAMFILES64\nodejs\node_modules\npm\bin\npm-cli.js"
+        FileWrite $9 "  [OK] npm-cli.js encontrado en %PROGRAMFILES64%\nodejs\$\r$\n"
+        ${If} $4 == ""
+          IfFileExists "$PROGRAMFILES\nodejs\node_modules\npm\bin\npm-cli.js" 0 +3
+          StrCpy $4 "$PROGRAMFILES\nodejs\node_modules\npm\bin\npm-cli.js"
+          FileWrite $9 "  [OK] npm-cli.js encontrado en %PROGRAMFILES%\nodejs\$\r$\n"
+        ${EndIf}
+      ${EndIf}
+
+      ${If} $4 != ""
+        FileWrite $9 "  Ejecutando: $3 $\"$4$\" install -g opencode-ai$\r$\n"
+        ExecWait '"$WINDIR\System32\cmd.exe" /c ""$3" "$4" install -g opencode-ai"' $1
+        ${If} $1 == 0
+          StrCpy $0 0
+          FileWrite $9 "  [OK] opencode instalado via npm-cli.js$\r$\n"
+        ${Else}
+          FileWrite $9 "  [ERROR] npm-cli.js falló con código $1$\r$\n"
+        ${EndIf}
+      ${Else}
+        FileWrite $9 "  [ERROR] npm-cli.js no encontrado en ninguna ubicación$\r$\n"
+      ${EndIf}
+    ${Else}
+      FileWrite $9 "  [INFO] Node.js no encontrado. Instalando Node.js via winget...$\r$\n"
+      DetailPrint "Instalando Node.js LTS via winget..."
+      ExecWait "$\"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe$\" -Command $\"winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements$\"" $1
       ${If} $1 == 0
-        FileWrite $9 "  [OK] npm install npm@latest -g exitoso (codigo $1)$\r$\n"
+        FileWrite $9 "  [OK] winget install OpenJS.NodeJS.LTS exitoso (codigo $1)$\r$\n"
         FileWrite $9 "  [INFO] Reintentando npm install -g opencode-ai...$\r$\n"
         ExecWait '"$WINDIR\System32\cmd.exe" /c "npm install -g opencode-ai"' $1
         ${If} $1 == 0
           StrCpy $0 0
-          FileWrite $9 "  [OK] opencode instalado via npm (despues de instalar npm)$\r$\n"
+          FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
         ${Else}
           FileWrite $9 "  [ERROR] npm install -g opencode-ai aun falla (codigo $1)$\r$\n"
         ${EndIf}
       ${Else}
-        FileWrite $9 "  [ERROR] npm install npm@latest -g fallo (codigo $1)$\r$\n"
+        FileWrite $9 "  [ERROR] winget falló con código $1 (puede no estar disponible)$\r$\n"
       ${EndIf}
-    ${Else}
-      FileWrite $9 "  [INFO] Node.js no encontrado. No se puede instalar npm.$\r$\n"
     ${EndIf}
   ${EndIf}
 
