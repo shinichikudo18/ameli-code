@@ -12,6 +12,13 @@ echo -e "${GREEN}║        AMELI Code Installer          ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
 echo ""
 
+echo -e "${YELLOW}¿Cómo te llamás? (AMELI te va a tratar por ese nombre)${NC}"
+echo -e "  (Dejalo vacío si usás el default: ${GREEN}Franco${NC})"
+read -p "Nombre: " USER_NAME
+USER_NAME="${USER_NAME:-Franco}"
+echo -e "${GREEN}✅ Hola $USER_NAME!${NC}"
+echo ""
+
 echo -e "${YELLOW}¿Dónde tenés tu proyecto de OpenCode?${NC}"
 echo -e "  (Dejalo vacío si usás el default: ${GREEN}~/Opencode${NC})"
 read -p "Ruta: " PROJECT_DIR
@@ -44,11 +51,31 @@ echo -e "${YELLOW}Guardando configuración...${NC}"
 CONFIG_DIR="$HOME/.config/ameli-code"
 mkdir -p "$CONFIG_DIR"
 if [ -n "$PROJECT_DIR" ]; then
-  echo "{\"projectDir\": \"$PROJECT_DIR\"}" > "$CONFIG_DIR/config.json"
+  echo "{\"projectDir\": \"$PROJECT_DIR\", \"userName\": \"$USER_NAME\"}" > "$CONFIG_DIR/config.json"
   echo -e "${GREEN}✅ Proyecto configurado: $PROJECT_DIR${NC}"
 else
-  echo "{}" > "$CONFIG_DIR/config.json"
+  echo "{\"userName\": \"$USER_NAME\"}" > "$CONFIG_DIR/config.json"
   echo -e "${GREEN}✅ Config creada (sin proyecto)${NC}"
+fi
+echo -e "${GREEN}✅ Te llamaré $USER_NAME${NC}"
+
+echo ""
+echo -e "${YELLOW}Instalando skills de AMELI...${NC}"
+SKILLS_TARGET="$HOME/.config/opencode/skills"
+mkdir -p "$SKILLS_TARGET/ameli-personal"
+if [ -f "$APP_DIR/backups/opencode/skills/ameli-personal/SKILL.md" ]; then
+  sed "s/__USER_NAME__/$USER_NAME/g" "$APP_DIR/backups/opencode/skills/ameli-personal/SKILL.md" > "$SKILLS_TARGET/ameli-personal/SKILL.md"
+  echo -e "${GREEN}✅ Skill ameli-personal instalada${NC}"
+fi
+if [ -f "$APP_DIR/backups/opencode/skills/context-sesion/SKILL.md" ]; then
+  mkdir -p "$SKILLS_TARGET/context-sesion"
+  cp "$APP_DIR/backups/opencode/skills/context-sesion/SKILL.md" "$SKILLS_TARGET/context-sesion/SKILL.md"
+  echo -e "${GREEN}✅ Skill context-sesion instalada${NC}"
+fi
+AGENTS_TARGET="$HOME/.config/opencode"
+if [ -f "$APP_DIR/backups/opencode/AGENTS.md" ]; then
+  sed "s/__USER_NAME__/$USER_NAME/g" "$APP_DIR/backups/opencode/AGENTS.md" > "$AGENTS_TARGET/AGENTS.md"
+  echo -e "${GREEN}✅ AGENTS.md configurado${NC}"
 fi
 
 echo ""

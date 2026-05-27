@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   startServerInDir: (opts) => ipcRenderer.invoke('start-server-in-dir', opts),
   renameProject: (opts) => ipcRenderer.invoke('rename-project', opts),
   deleteProject: (opts) => ipcRenderer.invoke('delete-project', opts),
+  getUserName: () => ipcRenderer.invoke('get-user-name'),
 
   minimize: () => ipcRenderer.invoke('minimize-window'),
   maximize: () => ipcRenderer.invoke('maximize-window'),

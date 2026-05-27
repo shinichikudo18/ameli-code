@@ -16,6 +16,7 @@ const CONFIG_PATH = path.join(os.homedir(), '.config', 'ameli-code', 'config.jso
 let appConfig = {}
 try { appConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) } catch {}
 const DEFAULT_PROJECT_DIR = appConfig.projectDir || path.join(os.homedir(), 'Opencode')
+const USER_NAME = appConfig.userName || 'Franco'
 
 const ICON_PATH = path.join(__dirname, 'assets', 'logo', 'ameli-icon.png')
 
@@ -431,6 +432,8 @@ app.whenReady().then(async () => {
       return { ok: true }
     } catch (e) { return { ok: false, error: e.message } }
   })
+
+  ipcMain.handle('get-user-name', () => USER_NAME)
 
   ipcMain.handle('minimize-window', () => mainWindow.minimize())
   ipcMain.handle('maximize-window', () => {

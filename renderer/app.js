@@ -30,6 +30,7 @@ if (!activeSkills.includes('ameli-personal')) {
   activeSkills.push('ameli-personal')
   localStorage.setItem('ameli.activeSkills', JSON.stringify(activeSkills))
 }
+let userName = localStorage.getItem('ameli.userName') || ''
 let lastProjectDir = localStorage.getItem('ameli.lastProjectDir') || ''
 let lastSessionId = localStorage.getItem('ameli.lastSessionId') || ''
 let restoringProject = false
@@ -461,7 +462,7 @@ function addMessage(role, text) {
   const div = document.createElement('div')
   div.className = `msg ${role}`
   div.setAttribute('data-selectable', 'true')
-  const label = role === 'user' ? 'Franco' : 'AMELI'
+  const label = role === 'user' ? (userName || 'Usuario') : 'AMELI'
   div.innerHTML = `<div class="role-label">${label}</div>${escapeHtml(text)}`
   messagesEl.appendChild(div)
 }
@@ -561,7 +562,16 @@ async function restoreLastSession() {
   if (match) await selectSession(match.id)
 }
 
+async function loadUserName() {
+  const name = await window.electronAPI.getUserName()
+  if (name) {
+    userName = name
+    localStorage.setItem('ameli.userName', name)
+  }
+}
+
 async function bootstrapWorkspace() {
+  await loadUserName()
   const current = await loadProject()
   const currentPath = current?.worktree || current?.directory || currentProjectPath || ''
 
