@@ -4,7 +4,7 @@
 
   FileOpen $9 $8 w
   FileWrite $9 "=== AMELI Code - Instalacion de opencode CLI ===$\r$\n"
-  FileWrite $9 "Iniciado: $%DATE% $%TIME%$\r$\n$\r$\n"
+  FileWrite $9 "Build: ${__DATE__} ${__TIME__}$\r$\n$\r$\n"
   FileWrite $9 "[1/5] Verificando si opencode ya esta instalado...$\r$\n"
 
   DetailPrint "[1/5] Verificando opencode CLI..."
