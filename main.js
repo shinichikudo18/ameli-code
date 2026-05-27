@@ -13,6 +13,248 @@ if (process.env.GH_TOKEN) {
   autoUpdater.token = process.env.GITHUB_TOKEN
 }
 
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
+
+let mainWindow
+let tray
+let ocServeProcess = null
+let isQuitting = false
+const API_BASE = 'http://localhost'
+const REPO_ROOT = path.resolve(__dirname)
+const CONFIG_PATH = path.join(os.homedir(), '.config', 'ameli-code', 'config.json')
+let appConfig = {}
+try { appConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) } catch {}
+const DEFAULT_PROJECT_DIR = appConfig.projectDir || path.join(os.homedir(), 'Opencode')
+const USER_NAME = appConfig.userName || os.userInfo().username || 'Franco'
+
+const ICON_PATH = path.join(__dirname, 'assets', 'logo', 'ameli-icon.png')
+
+function apiUrl(port, endpoint) {
+  return `${API_BASE}:${port}${endpoint}`
+}
+
+function apiFetch(port, endpoint, options = {}) {
+  const url = apiUrl(port, endpoint)
+  return new Promise((resolve, reject) => {
+    const u = new URL(url)
+    const opts = {
+      hostname: u.hostname,
+      port: u.port,
+      path: u.pathname + u.search,
+      method: options.method || 'GET',
+      headers: { 'Content-Type': 'application/json', ...options.headers },
+      timeout: 120000,
+    }
+    const bodyData = options.body ? JSON.stringify(options.body) : null
+    if (bodyData) {
+      opts.headers['Content-Length'] = Buffer.byteLength(bodyData)
+    }
+    const req = http.request(opts, (res) => {
+      let data = ''
+      res.on('data', (chunk) => data += chunk)
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)) }
+        catch { resolve(data) }
+      })
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    if (bodyData) req.write(bodyData)
+    req.end()
+  })
+}
+
+function normalizeList(value) {
+  if (!value) return []
+  return Array.isArray(value) ? value : Object.values(value)
+}
+
+function parseSkillMetadata(content) {
+  const lines = String(content || '').split(/\r?\n/)
+  if (lines[0] !== '---') return { name: '', description: '' }
+
+  let name = ''
+  let description = ''
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i]
+    if (line === '---') break
+    const match = line.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/)
+    if (!match) continue
+    const key = match[1]
+    const value = match[2].trim()
+    if (key === 'name') name = value
+    if (key === 'description') description = value
+  }
+  return { name, description }
+}
+
+function collectSkillsFromDir(dir, results, seen) {
+  if (!dir || !fs.existsSync(dir)) return
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const skillFile = path.join(dir, entry.name, 'SKILL.md')
+    if (!fs.existsSync(skillFile)) continue
+    const content = fs.readFileSync(skillFile, 'utf8')
+    const meta = parseSkillMetadata(content)
+    const name = meta.name || entry.name
+    if (seen.has(name)) continue
+    seen.add(name)
+    results.push({
+      name,
+      description: meta.description || '',
+      path: skillFile,
+    })
+  }
+}
+
+function runCommand(command, args, options = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      cwd: REPO_ROOT,
+      shell: false,
+      ...options,
+    })
+    let stdout = ''
+    let stderr = ''
+    if (child.stdout) child.stdout.on('data', (chunk) => { stdout += chunk })
+    if (child.stderr) child.stderr.on('data', (chunk) => { stderr += chunk })
+    child.on('error', (error) => resolve({ code: -1, stdout, stderr: error.message }))
+    child.on('close', (code) => resolve({ code, stdout, stderr }))
+  })
+}
+
+async function listAvailableModels(port) {
+  const collected = []
+  const seen = new Set()
+
+  const addFromProviderPayload = (payload) => {
+    const providerList = normalizeList(payload?.providers || payload?.all)
+    for (const provider of providerList) {
+      const models = normalizeList(provider?.models)
+      for (const model of models) {
+        const modelID = model?.id || model?.name
+        if (!provider?.id || !modelID) continue
+        const key = `${provider.id}/${modelID}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        collected.push({
+          providerID: provider.id,
+          modelID,
+          label: `${provider.name || provider.id}: ${model.name || modelID}`,
+        })
+      }
+    }
+  }
+
+  try { addFromProviderPayload(await apiFetch(port, '/config/providers')) } catch {}
+  try { addFromProviderPayload(await apiFetch(port, '/provider')) } catch {}
+
+  return collected
+}
+
+async function getDefaultModel(port) {
+  try {
+    const cfg = await apiFetch(port, '/config')
+    return cfg?.model || ''
+  } catch {
+    return ''
+  }
+}
+
+async function listSkills(port) {
+  const results = []
+  const seen = new Set()
+  const home = os.homedir()
+
+  collectSkillsFromDir(path.join(home, '.config', 'opencode', 'skills'), results, seen)
+  collectSkillsFromDir(path.join(home, '.claude', 'skills'), results, seen)
+  collectSkillsFromDir(path.join(home, '.agents', 'skills'), results, seen)
+
+  try {
+    const current = await apiFetch(port, '/project/current')
+    const roots = normalizeList(current?.worktree ? [current.worktree] : current?.directory ? [current.directory] : [])
+    for (const root of roots) {
+      collectSkillsFromDir(path.join(root, '.opencode', 'skills'), results, seen)
+      collectSkillsFromDir(path.join(root, '.claude', 'skills'), results, seen)
+      collectSkillsFromDir(path.join(root, '.agents', 'skills'), results, seen)
+    }
+  } catch {}
+
+  return results
+}
+
+function createTray() {
+  const icon = nativeImage.createFromPath(ICON_PATH)
+  const trayIcon = icon.resize({ width: 22, height: 22 })
+
+  tray = new Tray(trayIcon)
+  tray.setToolTip('AMELI Code')
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Mostrar ventana',
+      click: () => { mainWindow.show(); mainWindow.focus() },
+    },
+    {
+      label: 'Ocultar ventana',
+      click: () => mainWindow.hide(),
+    },
+    { type: 'separator' },
+    {
+      label: 'Salir',
+      click: () => { isQuitting = true; app.quit() },
+    },
+  ])
+
+  tray.setContextMenu(contextMenu)
+  tray.on('click', () => {
+    if (mainWindow.isVisible()) mainWindow.hide()
+    else { mainWindow.show(); mainWindow.focus() }
+  })
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1100,
+    height: 750,
+    minWidth: 800,
+    minHeight: 550,
+    frame: false,
+    titleBarStyle: 'hidden',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+    backgroundColor: '#1a1a2e',
+    title: 'AMELI Code',
+    icon: ICON_PATH,
+    show: false,
+  })
+
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'))
+
+  mainWindow.once('ready-to-show', () => mainWindow.show())
+
+  mainWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault()
+      mainWindow.hide()
+    }
+  })
+}
+
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
 
