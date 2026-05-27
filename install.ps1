@@ -87,6 +87,31 @@ if ($ocPath) {
         }
     }
     if (-not $npmOk) {
+        Write-Host "[INFO] npm no disponible. Descargando opencode CLI desde GitHub..." -ForegroundColor Yellow
+        $zipPath = "$env:TEMP\opencode-windows-x64.zip"
+        $destDir = "$env:LOCALAPPDATA\opencode"
+        try {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri "https://github.com/anomalyco/opencode/releases/latest/download/opencode-windows-x64.zip" -OutFile $zipPath -UseBasicParsing
+            Remove-Item -Path $destDir -Recurse -Force -ErrorAction SilentlyContinue
+            Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
+            Remove-Item $zipPath -Force
+            $binPath = "$destDir\opencode-windows-x64"
+            $exe = Get-ChildItem -Path $binPath -Filter "*.exe" | Select-Object -First 1
+            if ($exe) {
+                Move-Item $exe.FullName "$binPath\opencode.exe" -Force
+                $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+                if ($currentPath -notlike "*$binPath*") {
+                    [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$binPath", "User")
+                }
+                Write-Host "[OK] opencode CLI instalado desde GitHub" -ForegroundColor Green
+                $npmOk = $true
+            }
+        } catch {
+            Write-Host "[WARN] No se pudo descargar opencode: $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+    if (-not $npmOk) {
         Write-Host "[WARN] No se pudo instalar opencode automaticamente." -ForegroundColor Yellow
         Write-Host "       Instalalo manualmente desde: https://opencode.ai" -ForegroundColor Cyan
     }

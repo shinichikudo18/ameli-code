@@ -1,12 +1,11 @@
 # AMELI Code - Instalador de opencode CLI para Windows
-# Este script verifica si opencode CLI esta instalado y si no, lo instala
-# usando npm (recomendado), chocolatey o scoop.
+# Verifica si opencode CLI esta instalado y si no, lo instala
+# via npm o descarga directa desde GitHub.
 
 $host.UI.RawUI.WindowTitle = "AMELI Code - Instalando opencode CLI"
 
 Write-Host "Verificando opencode CLI..." -ForegroundColor Yellow
 
-# Check if already installed
 $opencodePath = Get-Command "opencode" -ErrorAction SilentlyContinue
 if ($opencodePath) {
     Write-Host "[OK] opencode CLI ya esta instalado: $($opencodePath.Source)" -ForegroundColor Green
@@ -15,44 +14,51 @@ if ($opencodePath) {
 
 Write-Host "[INFO] opencode CLI no encontrado. Intentando instalar..." -ForegroundColor Yellow
 
-# Method 1: npm (most common among developers)
 $npmPath = Get-Command "npm" -ErrorAction SilentlyContinue
 if ($npmPath) {
     Write-Host "[INFO] Instalando via npm..." -ForegroundColor Yellow
-    $process = Start-Process -FilePath "npm" -ArgumentList "install", "-g", "opencode-ai@latest" -NoNewWindow -Wait -PassThru
-    if ($process.ExitCode -eq 0) {
-        Write-Host "[OK] opencode CLI instalado correctamente via npm" -ForegroundColor Green
+    npm install -g opencode-ai@latest
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[OK] opencode CLI instalado via npm" -ForegroundColor Green
         exit 0
     }
     Write-Host "[WARN] Fallo instalacion via npm" -ForegroundColor Yellow
 }
 
-# Method 2: chocolatey
-$chocoPath = Get-Command "choco" -ErrorAction SilentlyContinue
-if ($chocoPath) {
-    Write-Host "[INFO] Instalando via chocolatey..." -ForegroundColor Yellow
-    $process = Start-Process -FilePath "choco" -ArgumentList "install", "opencode", "-y" -NoNewWindow -Wait -PassThru
-    if ($process.ExitCode -eq 0) {
-        Write-Host "[OK] opencode CLI instalado correctamente via chocolatey" -ForegroundColor Green
+Write-Host "[INFO] npm no disponible. Descargando opencode CLI desde GitHub..." -ForegroundColor Yellow
+
+$zipPath = "$env:TEMP\opencode-windows-x64.zip"
+$destDir = "$env:LOCALAPPDATA\opencode"
+
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri "https://github.com/anomalyco/opencode/releases/latest/download/opencode-windows-x64.zip" -OutFile $zipPath -UseBasicParsing
+
+    Remove-Item -Path $destDir -Recurse -Force -ErrorAction SilentlyContinue
+    Expand-Archive -Path $zipPath -DestinationPath $destDir -Force
+    Remove-Item $zipPath -Force
+
+    $binPath = "$destDir\opencode-windows-x64"
+    $exe = Get-ChildItem -Path $binPath -Filter "*.exe" | Select-Object -First 1
+    if ($exe) {
+        $opencodeExe = "$binPath\opencode.exe"
+        Move-Item $exe.FullName $opencodeExe -Force
+
+        $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+        if ($currentPath -notlike "*$binPath*") {
+            [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$binPath", "User")
+            Write-Host "[OK] opencode agregado al PATH de usuario" -ForegroundColor Green
+        }
+
+        Write-Host "[OK] opencode CLI instalado en: $opencodeExe" -ForegroundColor Green
+        Write-Host ""
+        Write-Host "IMPORTANTE: Necesitas cerrar y reabrir la terminal para usar 'opencode'." -ForegroundColor Cyan
         exit 0
     }
-    Write-Host "[WARN] Fallo instalacion via chocolatey" -ForegroundColor Yellow
+} catch {
+    Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red
 }
 
-# Method 3: scoop
-$scoopPath = Get-Command "scoop" -ErrorAction SilentlyContinue
-if ($scoopPath) {
-    Write-Host "[INFO] Instalando via scoop..." -ForegroundColor Yellow
-    $process = Start-Process -FilePath "scoop" -ArgumentList "install", "opencode" -NoNewWindow -Wait -PassThru
-    if ($process.ExitCode -eq 0) {
-        Write-Host "[OK] opencode CLI instalado correctamente via scoop" -ForegroundColor Green
-        exit 0
-    }
-    Write-Host "[WARN] Fallo instalacion via scoop" -ForegroundColor Yellow
-}
-
-Write-Host "[ERROR] No se pudo instalar opencode CLI automaticamente." -ForegroundColor Red
-Write-Host ""
+Write-Host "[ERROR] No se pudo instalar opencode CLI." -ForegroundColor Red
 Write-Host "Instalalo manualmente desde: https://opencode.ai" -ForegroundColor Cyan
-Write-Host "O ejecuta: npm install -g opencode-ai" -ForegroundColor Cyan
 exit 1
