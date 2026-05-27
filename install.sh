@@ -120,7 +120,13 @@ elif command -v opencode-cli &> /dev/null; then
     echo -e "${YELLOW}   Asegurate de tener ~/.local/bin en tu PATH${NC}"
   fi
 else
-  echo -e "${YELLOW}⚠️  opencode CLI no encontrado. Instalalo desde https://opencode.ai${NC}"
+  echo -e "${YELLOW}⚠️  opencode CLI no encontrado. Instalando automáticamente...${NC}"
+  if curl -fsSL https://opencode.ai/install | bash; then
+    echo -e "${GREEN}✅ opencode CLI instalado correctamente${NC}"
+  else
+    echo -e "${RED}❌ No se pudo instalar opencode automáticamente.${NC}"
+    echo -e "${YELLOW}   Instalalo manualmente desde https://opencode.ai${NC}"
+  fi
 fi
 
 echo ""

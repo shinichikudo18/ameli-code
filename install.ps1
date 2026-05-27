@@ -72,6 +72,38 @@ if (Test-Path "backups\opencode\AGENTS.md") {
 }
 
 Write-Host ""
+Write-Host "Verificando opencode CLI..." -ForegroundColor Yellow
+$ocPath = Get-Command "opencode" -ErrorAction SilentlyContinue
+if ($ocPath) {
+    Write-Host "[OK] opencode CLI disponible: $($ocPath.Source)" -ForegroundColor Green
+} else {
+    Write-Host "[INFO] opencode CLI no encontrado. Instalando..." -ForegroundColor Yellow
+    $npmOk = $false
+    $npmPath = Get-Command "npm" -ErrorAction SilentlyContinue
+    if ($npmPath) {
+        npm install -g opencode-ai@latest
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "[OK] opencode CLI instalado via npm" -ForegroundColor Green
+            $npmOk = $true
+        }
+    }
+    if (-not $npmOk) {
+        $chocoPath = Get-Command "choco" -ErrorAction SilentlyContinue
+        if ($chocoPath) {
+            choco install opencode -y
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "[OK] opencode CLI instalado via chocolatey" -ForegroundColor Green
+                $npmOk = $true
+            }
+        }
+    }
+    if (-not $npmOk) {
+        Write-Host "[WARN] No se pudo instalar opencode automaticamente." -ForegroundColor Yellow
+        Write-Host "       Instalalo manualmente desde: https://opencode.ai" -ForegroundColor Cyan
+    }
+}
+
+Write-Host ""
 Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host "  Instalacion completa!" -ForegroundColor Cyan
 Write-Host "=======================================" -ForegroundColor Cyan
