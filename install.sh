@@ -12,11 +12,8 @@ echo -e "${GREEN}║        AMELI Code Installer          ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
 echo ""
 
-echo -e "${YELLOW}¿Cómo te llamás? (AMELI te va a tratar por ese nombre)${NC}"
-echo -e "  (Dejalo vacío si usás el default: ${GREEN}Franco${NC})"
-read -p "Nombre: " USER_NAME
-USER_NAME="${USER_NAME:-Franco}"
-echo -e "${GREEN}✅ Hola $USER_NAME!${NC}"
+USER_NAME="${USER:-$(whoami)}"
+echo -e "${GREEN}✅ Hola $USER_NAME! (detectado del sistema)${NC}"
 echo ""
 
 echo -e "${YELLOW}¿Dónde tenés tu proyecto de OpenCode?${NC}"

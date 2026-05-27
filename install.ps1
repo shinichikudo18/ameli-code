@@ -6,9 +6,8 @@ Write-Host "       AMELI Code Installer (Windows)  " -ForegroundColor Cyan
 Write-Host "=======================================" -ForegroundColor Cyan
 Write-Host ""
 
-$userName = Read-Host "Como te llamas? (AMELI te va a tratar por ese nombre) [Franco]"
-if (-not $userName) { $userName = "Franco" }
-Write-Host "[OK] Hola $userName!" -ForegroundColor Green
+$userName = $env:USERNAME
+Write-Host "[OK] Hola $userName! (detectado del sistema)" -ForegroundColor Green
 Write-Host ""
 
 $projectDir = Read-Host "Donde tenes tu proyecto de OpenCode? (dejalo vacio si usas ~/Opencode) []"

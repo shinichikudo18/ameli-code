@@ -17,7 +17,7 @@ const CONFIG_PATH = path.join(os.homedir(), '.config', 'ameli-code', 'config.jso
 let appConfig = {}
 try { appConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) } catch {}
 const DEFAULT_PROJECT_DIR = appConfig.projectDir || path.join(os.homedir(), 'Opencode')
-const USER_NAME = appConfig.userName || 'Franco'
+const USER_NAME = appConfig.userName || os.userInfo().username || 'Franco'
 
 const ICON_PATH = path.join(__dirname, 'assets', 'logo', 'ameli-icon.png')
 
