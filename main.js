@@ -306,6 +306,38 @@ function checkUpdateFallback() {
   req.setTimeout(8000, () => { req.destroy() })
 }
 
+function findOpencodeBinary() {
+  if (findOpencodeBinary.cached) return findOpencodeBinary.cached
+
+  const isWin = process.platform === 'win32'
+  const exeName = isWin ? 'opencode.exe' : 'opencode'
+
+  const home = process.env.HOME || process.env.USERPROFILE || ''
+  const localAppData = process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local')
+  const roamingAppData = process.env.APPDATA || path.join(home, 'AppData', 'Roaming')
+
+  const candidates = [
+    path.join(roamingAppData, 'npm', exeName),
+    path.join(localAppData, 'opencode', `opencode-windows-x64`, exeName),
+    path.join(localAppData, 'opencode', exeName),
+    path.join(home, '.local', 'bin', exeName),
+    path.join(home, 'bin', exeName),
+    '/usr/local/bin/opencode',
+    '/usr/bin/opencode',
+    path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', exeName),
+  ]
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      findOpencodeBinary.cached = candidate
+      return candidate
+    }
+  }
+
+  findOpencodeBinary.cached = 'opencode'
+  return 'opencode'
+}
+
 async function checkServer(port) {
   try {
     const res = await apiFetch(port, '/global/health')
@@ -324,7 +356,8 @@ async function findServer(ports) {
 function startOpencodeServe(port, cwd) {
   return new Promise((resolve) => {
     let started = false
-    ocServeProcess = spawn('opencode', ['serve', '--port', String(port)], {
+    const bin = findOpencodeBinary()
+    ocServeProcess = spawn(bin, ['serve', '--port', String(port)], {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: cwd || DEFAULT_PROJECT_DIR,
       shell: true,
@@ -369,7 +402,7 @@ app.whenReady().then(async () => {
         activePort = p
         sendToWindow('server-connected', { port: p })
       } else {
-        runCommand('opencode', ['--version']).then((res) => {
+        runCommand(findOpencodeBinary(), ['--version']).then((res) => {
           if (res.code !== 0) {
             sendToWindow('opencode-not-found', true)
           }
@@ -474,7 +507,7 @@ app.whenReady().then(async () => {
     ocServeProcess = null
     activePort = null
     const port = 4096
-    ocServeProcess = spawn('opencode', ['serve', '--port', String(port)], {
+    ocServeProcess = spawn(findOpencodeBinary(), ['serve', '--port', String(port)], {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: dir,
       shell: true,
@@ -504,7 +537,7 @@ app.whenReady().then(async () => {
         ocServeProcess = null
         activePort = null
         const port = 4096
-        ocServeProcess = spawn('opencode', ['serve', '--port', String(port)], {
+        ocServeProcess = spawn(findOpencodeBinary(), ['serve', '--port', String(port)], {
           stdio: ['ignore', 'pipe', 'pipe'],
           cwd: newPath,
           shell: true,
