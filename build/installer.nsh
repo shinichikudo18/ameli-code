@@ -9,6 +9,7 @@
 
   DetailPrint "[1/5] Verificando opencode CLI..."
   StrCpy $0 0
+  StrCpy $6 "$PROFILE\AppData\Roaming\npm\opencode.exe"
 
   ExecWait '"$WINDIR\System32\cmd.exe" /c "opencode --version >nul 2>nul"' $0
   ${If} $0 == 0
@@ -21,7 +22,7 @@
     ${EndIf}
   ${EndIf}
   ${If} $0 != 0
-    IfFileExists "$PROFILE\AppData\Roaming\npm\opencode.exe" 0 +3
+    IfFileExists $6 0 +3
     StrCpy $0 0
     FileWrite $9 "  [OK] encontrado en %APPDATA%\npm\opencode.exe$\r$\n"
   ${EndIf}
@@ -53,7 +54,7 @@
 
   FileWrite $9 "  [INFO] opencode no encontrado. Procediendo a instalar...$\r$\n"
 
-  FileWrite $9 "$\r$\n[2/5] Buscando npm...$\r$\n"
+  FileWrite $9 "$\r\n[2/5] Buscando npm...$\r\n"
   DetailPrint "[2/5] Buscando npm..."
   StrCpy $2 ""
   ExecWait '"$WINDIR\System32\cmd.exe" /c "where npm >nul 2>nul"' $1
@@ -77,14 +78,28 @@
   ${EndIf}
 
   ${If} $2 != ""
-    FileWrite $9 "$\r$\n[3/5] Instalando opencode via npm...$\r$\n"
+    FileWrite $9 "$\r\n[3/5] Instalando opencode via npm...$\r\n"
     DetailPrint "[3/5] Instalando opencode via npm..."
-    FileWrite $9 "  Ejecutando: $2 install -g opencode-ai$\r$\n"
-    ExecWait '"$WINDIR\System32\cmd.exe" /c ""$2" install -g opencode-ai"' $1
+    FileWrite $9 "  Ejecutando: $2 install -g opencode-ai --prefix $PROFILE\AppData\Roaming\npm$\r$\n"
+    nsExec::ExecToLog '"cmd.exe" /c "$2 install -g opencode-ai --prefix $PROFILE\AppData\Roaming\npm"'
+    Pop $1
     ${If} $1 == 0
+      IfFileExists $6 0 +3
       StrCpy $0 0
-      DetailPrint "opencode CLI instalado via npm"
-      FileWrite $9 "  [OK] npm install -g opencode-ai exitoso (codigo $1)$\r$\n"
+      FileWrite $9 "  [OK] opencode encontrado en %APPDATA%\npm\$\r$\n"
+      ${If} $0 != 0
+        FileWrite $9 "  [INFO] npm reporta exito pero opencode no esta en %APPDATA%\npm. Buscando...$\r$\n"
+        IfFileExists "$PROGRAMFILES64\nodejs\opencode.exe" 0 +3
+        StrCpy $0 0
+        CopyFiles /SILENT "$PROGRAMFILES64\nodejs\opencode.exe" $6
+        FileWrite $9 "  [OK] opencode copiado desde %PROGRAMFILES64%\nodejs$\r$\n"
+        ${If} $0 != 0
+          IfFileExists "$PROGRAMFILES\nodejs\opencode.exe" 0 +3
+          StrCpy $0 0
+          CopyFiles /SILENT "$PROGRAMFILES\nodejs\opencode.exe" $6
+          FileWrite $9 "  [OK] opencode copiado desde %PROGRAMFILES%\nodejs$\r$\n"
+        ${EndIf}
+      ${EndIf}
     ${Else}
       FileWrite $9 "  [ERROR] npm falló con código $1$\r$\n"
     ${EndIf}
@@ -125,11 +140,26 @@
       ${EndIf}
 
       ${If} $4 != ""
-        FileWrite $9 "  Ejecutando: $3 $\"$4$\" install -g opencode-ai$\r$\n"
-        ExecWait '"$WINDIR\System32\cmd.exe" /c ""$3" "$4" install -g opencode-ai"' $1
+        FileWrite $9 "  Ejecutando: $3 $4 install -g opencode-ai --prefix $PROFILE\AppData\Roaming\npm$\r$\n"
+        nsExec::ExecToLog '"cmd.exe" /c "$3 $4 install -g opencode-ai --prefix $PROFILE\AppData\Roaming\npm"'
+        Pop $1
         ${If} $1 == 0
+          IfFileExists $6 0 +3
           StrCpy $0 0
-          FileWrite $9 "  [OK] opencode instalado via npm-cli.js$\r$\n"
+          FileWrite $9 "  [OK] opencode encontrado en %APPDATA%\npm$\r$\n"
+          ${If} $0 != 0
+            FileWrite $9 "  [INFO] npm reporta exito pero opencode no esta en %APPDATA%\npm. Buscando...$\r$\n"
+            IfFileExists "$PROGRAMFILES64\nodejs\opencode.exe" 0 +3
+            StrCpy $0 0
+            CopyFiles /SILENT "$PROGRAMFILES64\nodejs\opencode.exe" $6
+            FileWrite $9 "  [OK] opencode copiado desde %PROGRAMFILES64%\nodejs$\r$\n"
+            ${If} $0 != 0
+              IfFileExists "$PROGRAMFILES\nodejs\opencode.exe" 0 +3
+              StrCpy $0 0
+              CopyFiles /SILENT "$PROGRAMFILES\nodejs\opencode.exe" $6
+              FileWrite $9 "  [OK] opencode copiado desde %PROGRAMFILES%\nodejs$\r$\n"
+            ${EndIf}
+          ${EndIf}
         ${Else}
           FileWrite $9 "  [ERROR] npm-cli.js falló con código $1$\r$\n"
         ${EndIf}
@@ -139,7 +169,8 @@
     ${Else}
       FileWrite $9 "  [INFO] Node.js no encontrado. Instalando Node.js via winget...$\r$\n"
       DetailPrint "Instalando Node.js LTS via winget..."
-      ExecWait "$\"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe$\" -Command $\"winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements$\"" $1
+      nsExec::ExecToLog '"powershell.exe" -Command "winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements"'
+      Pop $1
       ${If} $1 == 0
         FileWrite $9 "  [OK] winget install OpenJS.NodeJS.LTS exitoso (codigo $1)$\r$\n"
         FileWrite $9 "  [INFO] Buscando npm en rutas de instalacion...$\r$\n"
@@ -158,11 +189,26 @@
           ${EndIf}
         ${EndIf}
         ${If} $2 != ""
-          FileWrite $9 "  [INFO] Ejecutando: $2 install -g opencode-ai$\r$\n"
-          ExecWait '"$WINDIR\System32\cmd.exe" /c ""$2" install -g opencode-ai"' $1
+          FileWrite $9 "  [INFO] Ejecutando: $2 install -g opencode-ai --prefix $PROFILE\AppData\Roaming\npm$\r$\n"
+          nsExec::ExecToLog '"cmd.exe" /c "$2 install -g opencode-ai --prefix $PROFILE\AppData\Roaming\npm"'
+          Pop $1
           ${If} $1 == 0
+            IfFileExists $6 0 +3
             StrCpy $0 0
-            FileWrite $9 "  [OK] opencode instalado via npm (despues de winget)$\r$\n"
+            FileWrite $9 "  [OK] opencode encontrado en %APPDATA%\npm$\r$\n"
+            ${If} $0 != 0
+              FileWrite $9 "  [INFO] npm reporta exito pero opencode no esta en %APPDATA%\npm. Buscando...$\r$\n"
+              IfFileExists "$PROGRAMFILES64\nodejs\opencode.exe" 0 +3
+              StrCpy $0 0
+              CopyFiles /SILENT "$PROGRAMFILES64\nodejs\opencode.exe" $6
+              FileWrite $9 "  [OK] opencode copiado desde %PROGRAMFILES64%\nodejs$\r$\n"
+              ${If} $0 != 0
+                IfFileExists "$PROGRAMFILES\nodejs\opencode.exe" 0 +3
+                StrCpy $0 0
+                CopyFiles /SILENT "$PROGRAMFILES\nodejs\opencode.exe" $6
+                FileWrite $9 "  [OK] opencode copiado desde %PROGRAMFILES%\nodejs$\r$\n"
+              ${EndIf}
+            ${EndIf}
           ${Else}
             FileWrite $9 "  [ERROR] npm install -g opencode-ai falló con código $1$\r$\n"
           ${EndIf}
@@ -179,28 +225,29 @@
     FileWrite $9 "$\r$\n[4/5] Descargando opencode desde GitHub...$\r$\n"
     DetailPrint "[4/5] Descargando opencode desde GitHub..."
     CreateDirectory "$TEMP\ameli-install"
-    ExecWait '"$WINDIR\System32\curl.exe" -sL -o "$TEMP\ameli-install\opencode.zip" "https://github.com/anomalyco/opencode/releases/latest/download/opencode-windows-x64.zip"' $1
+    nsExec::ExecToLog '"cmd.exe" /c "curl -sL -o $TEMP\ameli-install\opencode.zip https://github.com/anomalyco/opencode/releases/latest/download/opencode-windows-x64.zip"'
+    Pop $1
     ${If} $1 == 0
-      FileWrite $9 "  [OK] Descarga ZIP completada (curl código $1)$\r$\n"
+      FileWrite $9 "  [OK] Descarga ZIP completada (curl codigo $1)$\r$\n"
       DetailPrint "Extrayendo e instalando..."
-      ExecWait "$\"$WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe$\" -Command $\"Expand-Archive -Path '$TEMP\ameli-install\opencode.zip' -DestinationPath '$TEMP\ameli-install' -Force; $$exe = (Get-ChildItem '$TEMP\ameli-install\opencode-windows-x64\*.exe' | Select-Object -First 1).FullName; Copy-Item $$exe '$PROFILE\AppData\Roaming\npm\opencode.exe' -Force$\"" $2
+      nsExec::ExecToLog '"powershell.exe" -Command "Expand-Archive -Path $TEMP\ameli-install\opencode.zip -DestinationPath $TEMP\ameli-install -Force; $exe = (Get-ChildItem $TEMP\ameli-install\opencode-windows-x64\*.exe | Select-Object -First 1).FullName; Copy-Item $exe $PROFILE\AppData\Roaming\npm\opencode.exe -Force"'
+      Pop $2
       ${If} $2 == 0
-        IfFileExists "$PROFILE\AppData\Roaming\npm\opencode.exe" 0 +3
+        IfFileExists $6 0 +3
         StrCpy $0 0
         FileWrite $9 "  [OK] opencode copiado a %APPDATA%\npm\opencode.exe$\r$\n"
-        FileWrite $9 "  [OK] ¡Instalación directa exitosa!$\r$\n"
       ${Else}
         FileWrite $9 "  [ERROR] PowerShell falló con código $2$\r$\n"
       ${EndIf}
       RMDir /r "$TEMP\ameli-install"
     ${Else}
-      FileWrite $9 "  [ERROR] curl falló con código $1 (sin conexión o URL inválida)$\r$\n"
+      FileWrite $9 "  [ERROR] curl falló con código $1 (sin conexion o URL invalida)$\r$\n"
     ${EndIf}
   ${EndIf}
 
   ${If} $0 != 0
-    FileWrite $9 "$\r$\n[5/5] Instalación automática fallida$\r$\n"
-    DetailPrint "[5/5] Instalación automática fallida"
+    FileWrite $9 "$\r$\n[5/5] Instalacion automatica fallida$\r$\n"
+    DetailPrint "[5/5] Instalacion automatica fallida"
     FileWrite $9 "  [INFO] opencode no se pudo instalar automaticamente$\r$\n"
   ${EndIf}
 
